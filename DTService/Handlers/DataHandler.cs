@@ -132,6 +132,9 @@ namespace DTService.Handlers
             }
         }
 
+        //针对需要更新数据的表，需要了解当前的文件是针对几月的数据
+        //这样才能从数据库中筛选出正确的数据，并进行替换
+        //所以需要文件的名称的头6个字母标明当前的数据所属的月份
         private string FilterDateFromFilePath(string filePath)
         {
             var ImportDate = filePath.Substring(0, 6);
@@ -139,6 +142,23 @@ namespace DTService.Handlers
         }
 
         private void InsertIntoTable(TableName table, SqlCommand cmd, string filePath)
+        {
+
+            var start = filePath.LastIndexOf('.') + 1;
+            var end = filePath.Length - filePath.LastIndexOf('.') - 1;
+            var fileType = filePath.Substring(start, end).ToLower();
+
+            if(fileType == "csv" || fileType == "xls" || fileType == "xlsx")
+            {
+                InsertIntoTableWithExcel(table, cmd, filePath);
+            }
+            else if(fileType == "txt")
+            {
+                InsertIntoTableWithTxt(table, cmd, filePath);
+            }
+        }
+
+        private void InsertIntoTableWithTxt(TableName table, SqlCommand cmd, string filePath)
         {
             StringBuilder commandText = new StringBuilder();
             StreamReader sr = new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read),
@@ -167,7 +187,6 @@ namespace DTService.Handlers
             cmd.ExecuteNonQuery();
             sr.Close();
         }
-
         private void InsertIntoTableWithExcel(TableName table, SqlCommand cmd, string filePath)
         {
             StringBuilder commandText = new StringBuilder();
@@ -175,14 +194,14 @@ namespace DTService.Handlers
             {
                 var excel = new ExcelQueryFactory(filePath); 
 
-                var rows = from v in excel.WorksheetNoHeader()
+                var rows = from v in excel.Worksheet()
                            select v;
 
                 var count = 0;
                 foreach (var row in rows)
                 {
                     count++;
-                    commandText.Append(GenerateValuesFromExcelRow(row));
+                    commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow(row)) + "\n");
                     if(count == 5000)
                     {
                         cmd.CommandText = commandText.ToString();
@@ -200,13 +219,14 @@ namespace DTService.Handlers
             }
         }
 
-        private string[] GenerateValuesFromExcelRow(LinqToExcel.RowNoHeader row)
+        //将excel表中的每一行数据转换成对应的字符串数组
+        private string[] GenerateValuesFromExcelRow(LinqToExcel.Row row)
         { 
-            string[] values = null;
+            string[] values = new String[row.ToArray().Length];
             var count = 0;
             foreach (var value in row.ToArray())
             { 
-                values[count] = value;
+                values[count] = value.ToString();
                 count++;
             }
             return values;
@@ -248,7 +268,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithPincome(values, valueStr);
                     break;
                 case TableName.flightplan:
-                    valueStr = InsertWithCommon(values, valueStr);
+                    valueStr = InsertWithFlightPlan(values, valueStr);
                     break;
                 case TableName.groupincome:
                     valueStr = InsertWithCommon(values, valueStr);
@@ -378,7 +398,7 @@ namespace DTService.Handlers
             return commandText;
         }
 
-
+        //以下方法暂时没有作用，未来可以视情况进行删除
         private string UpdateWithPincome(string[] values, string commandText, string[] columnKeys)
         {
             var count = 0;
