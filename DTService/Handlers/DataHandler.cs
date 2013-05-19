@@ -62,14 +62,14 @@ namespace DTService.Handlers
                             cmd.CommandText = "insert pincome_temp " +
                                               "select month, fltdate, fltno, khcode, khname, xscode, xsname, sfcode, sfname, agtname, agtcode, agtcitycode," +
                                               "agtcityname, line, lineflag, segment, orgncity, destcity, segtype, cls, seattype, linecode, printdate, clsflag," +
-                                              "passenger, income, khincome, extrafee, oil, standardfee from pincome where month='201212'" +
+                                              "passenger, income, khincome, extrafee, oil, standardfee from pincome where month='" + ImportMonth + "'" + 
                                               " except " +
                                               "select month, fltdate, fltno, khcode, khname, xscode, xsname, sfcode, sfname, agtname, agtcode, agtcitycode," +
                                               "agtcityname, line, lineflag, segment, orgncity, destcity, segtype, cls, seattype, linecode, printdate, clsflag," +
                                               "passenger, income, khincome, extrafee, oil, standardfee from pincome_temp";
                             cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = "delete from pincome where month='201212'";
+                            cmd.CommandText = "delete from pincome where month='" + ImportMonth + "'";
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "insert pincome " +
@@ -88,14 +88,14 @@ namespace DTService.Handlers
                             cmd.CommandText = "insert hubincome_temp " +
                                               "select month, fltdate, fltno, linecode, khcode, khname, xscode, xsname, sfcode, sfname, agtcode, agtname," +
                                               "agtcitycode, agtcityname, line, lineflag, hub, cls, seattype, orgncity, destcity, segment, segtype, printdate, passenger," +
-                                              "income, extrafee, standardfee from hubincome where month='201212'" +
+                                              "income, extrafee, standardfee from hubincome where month='" + ImportMonth + "'" + 
                                               " except " +
                                               "select month, fltdate, fltno, linecode, khcode, khname, xscode, xsname, sfcode, sfname, agtcode, agtname," +
                                               "agtcitycode, agtcityname, line, lineflag, hub, cls, seattype, orgncity, destcity, segment, segtype, printdate, passenger," +
                                               "income, extrafee, standardfee from hubincome_temp";
                             cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = "delete from hubincome where month='201212'";
+                            cmd.CommandText = "delete from hubincome where month='" + ImportMonth + "'";
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "insert hubincome " +
@@ -170,7 +170,46 @@ namespace DTService.Handlers
 
         private void InsertIntoTableWithExcel(TableName table, SqlCommand cmd, string filePath)
         {
-            var excel = new ExcelQueryFactory(filePath);
+            StringBuilder commandText = new StringBuilder();
+            try
+            {
+                var excel = new ExcelQueryFactory(filePath); 
+
+                var rows = from v in excel.WorksheetNoHeader()
+                           select v;
+
+                var count = 0;
+                foreach (var row in rows)
+                {
+                    count++;
+                    commandText.Append(GenerateValuesFromExcelRow(row));
+                    if(count == 5000)
+                    {
+                        cmd.CommandText = commandText.ToString();
+                        cmd.ExecuteNonQuery();
+                        count = 0;
+                        commandText.Clear();
+                    }
+                }
+                cmd.CommandText = commandText.ToString();
+                cmd.ExecuteNonQuery(); 
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        private string[] GenerateValuesFromExcelRow(LinqToExcel.RowNoHeader row)
+        { 
+            string[] values = null;
+            var count = 0;
+            foreach (var value in row.ToArray())
+            { 
+                values[count] = value;
+                count++;
+            }
+            return values;
         }
 
         private string GetHandleCommandText(TableName table, HandleType handleType, string[] values, SqlCommand cmd)
