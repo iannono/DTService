@@ -33,8 +33,15 @@ namespace DTService.Handlers
                         success = dataHandler.HandleData(table, filePath);
                         if (success)
                         {
-                            MoveToHistory(filePath, dir);
                             results += "<p>" + Enum.GetName(typeof(TableName), table) + ": <span class='label label-success'>成功！</span></p>";
+                            try
+                            {
+                                MoveToHistory(filePath, dir);
+                            }
+                            catch
+                            {
+                                throw new Exception(results + "<p class='text-error'>由于无法将导入完成的文件(" + filePath +")移动到history文件夹，导入中止，请检查该文件夹下是否有同名文件，并手动移动该文件!</p>");
+                            }
                         }
                         else
                         {
@@ -113,7 +120,7 @@ namespace DTService.Handlers
             }
             else
             {
-                results += "<p>本次导入共导入：" + fileLength + "个文件，结果如下:</p>";
+                results += "<p>本次导入共需导入：" + fileLength + "个文件，结果如下:</p>";
             }
             return results;
         }

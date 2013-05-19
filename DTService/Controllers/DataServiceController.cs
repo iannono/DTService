@@ -22,8 +22,15 @@ namespace DTService.Controllers
         // GET api/dataservice/pincome
         public string Get(string table)
         {
-            string results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table));
-            return results;
+            try
+            {
+                string results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table));
+                return results;
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
         }
 
         // POST api/dataservice
