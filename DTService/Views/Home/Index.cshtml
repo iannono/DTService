@@ -1,0 +1,111 @@
+﻿<header id="notices" class="text-center">
+</header>
+<div id="body">
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>数据导入监控服务！</h1>
+            </hgroup>
+            <p>
+                点击下面列表中对应的数据表名称后的导入按钮，即可执行导入服务.
+            </p>
+            <p class="text-error">
+              *对于pincome和hubincome表，请确保导入文件名称的头六位是按照类似'201206'的格式标记数据所包含的月份*
+            </p>
+            <p>
+                如果对该服务有任何疑问，或者出现任何问题，可以通过以下方式进行联系!
+            </p>
+            <p>
+                联系人： 联系电话： QQ： 邮件：
+            </p>
+        </div>
+    </section>
+    <section class="content-wrapper main-content clear-fix">
+        <table class="table">
+
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>数据源名称</th>
+                    <th>导入原则</th>
+                    <th>表名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>客运销售收入贡献</td>
+                    <td>每天导入当月1号到今天的数据</td>
+                    <td>pincome</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="pincome"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>ET数据</td>
+                    <td>每天导入前一天的数据</td>
+                    <td>et</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="et"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>枢纽中转收入</td>
+                    <td>每天导入当月1号到今天的数据</td>
+                    <td>hubincome</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="hubincome"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>航线座公里收入</td>
+                    <td>每月15号导入一次</td>
+                    <td>lineincome</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="lineincome"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>大客户收入</td>
+                    <td>每月15号导入一次</td>
+                    <td>groupincome</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="groupincome"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>常旅客收入</td>
+                    <td>每月15号导入一次</td>
+                    <td>cincome</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="cincome"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>货运</td>
+                    <td>每天导入前一天的数据</td>
+                    <td>cargoincome</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="cargoincome"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>航班计划</td>
+                    <td>每年导入一次</td>
+                    <td>flightplan</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" data-loading-text="导入中..." data-table="flightplan"><i class="icon-circle-arrow-right icon-white"></i>数据导入</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<footer class="text-center">
+    <p class="text-info" style="font-size: 16px; padding-top: 20px;">
+        Copyright 2013 中国南方航空股份有限公司湖北分公司
+    </p>
+</footer>
