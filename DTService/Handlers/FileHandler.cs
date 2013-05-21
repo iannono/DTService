@@ -40,7 +40,7 @@ namespace DTService.Handlers
                             }
                             catch
                             {
-                                throw new Exception(results + "<p class='text-error'>由于无法将导入完成的文件(" + filePath +")移动到history文件夹，导入中止，请检查该文件夹下是否有同名文件，并手动移动该文件!</p>");
+                                throw new Exception(results + "<p class='text-error'>由于无法将导入完成的文件(" + filePath +")移动到history文件夹，导入中止，请检查该文件是否已经打开，或者该文件夹下是否有同名文件，如果有，请手动移动该文件!</p>");
                             }
                         }
                         else

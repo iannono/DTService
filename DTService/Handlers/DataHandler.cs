@@ -120,6 +120,7 @@ namespace DTService.Handlers
                         //add error log
                         success = false;
                         trans.Rollback();
+                        throw new Exception(e.Message);
                     }
                     finally
                     {
@@ -265,7 +266,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithPincome(values, valueStr);
                     break;
                 case TableName.et:
-                    valueStr = InsertWithPincome(values, valueStr);
+                    valueStr = InsertWithCommon(values, valueStr);
                     break;
                 case TableName.flightplan:
                     valueStr = InsertWithFlightPlan(values, valueStr);
