@@ -53,60 +53,18 @@ namespace DTService.Handlers
                     try
                     {
                         if (table == TableName.pincome)
-                        {
-                            table = TableName.pincome_temp;
-                            InsertIntoTable(table, cmd, filePath);
-                            //选出不在当前文件中的数据，写入临时表
-                            //删除数据库中和录入文件同一个月的数据
-                            //将临时表的数据写入到数据表，这么做主要是为了解决新下载的文件可能不包含原有的部分数据
-                            cmd.CommandText = "insert pincome_temp " +
-                                              "select month, fltdate, fltno, khcode, khname, xscode, xsname, sfcode, sfname, agtname, agtcode, agtcitycode," +
-                                              "agtcityname, line, lineflag, segment, orgncity, destcity, segtype, cls, seattype, linecode, printdate, clsflag," +
-                                              "passenger, income, khincome, extrafee, oil, standardfee from pincome where month='" + ImportMonth + "'" + 
-                                              " except " +
-                                              "select month, fltdate, fltno, khcode, khname, xscode, xsname, sfcode, sfname, agtname, agtcode, agtcitycode," +
-                                              "agtcityname, line, lineflag, segment, orgncity, destcity, segtype, cls, seattype, linecode, printdate, clsflag," +
-                                              "passenger, income, khincome, extrafee, oil, standardfee from pincome_temp";
-                            cmd.ExecuteNonQuery();
-
+                        { 
                             cmd.CommandText = "delete from pincome where month='" + ImportMonth + "'";
                             cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = "insert pincome " +
-                                              "select month, fltdate, fltno, khcode, khname, xscode, xsname, sfcode, sfname, agtname, agtcode, agtcitycode," +
-                                              "agtcityname, line, lineflag, segment, orgncity, destcity, segtype, cls, seattype, linecode, printdate, clsflag," +
-                                              "passenger, income, khincome, extrafee, oil, standardfee from pincome_temp;";
-                            cmd.ExecuteNonQuery();
-
-                            cmd.CommandText = "delete pincome_temp";
-                            cmd.ExecuteNonQuery();
+                            InsertIntoTable(table, cmd, filePath);
                         }
                         else if (table == TableName.hubincome)
                         {
-                            table = TableName.hubincome_temp;
-                            InsertIntoTable(table, cmd, filePath);
-                            cmd.CommandText = "insert hubincome_temp " +
-                                              "select month, fltdate, fltno, linecode, khcode, khname, xscode, xsname, sfcode, sfname, agtcode, agtname," +
-                                              "agtcitycode, agtcityname, line, lineflag, hub, cls, seattype, orgncity, destcity, segment, segtype, printdate, passenger," +
-                                              "income, extrafee, standardfee from hubincome where month='" + ImportMonth + "'" + 
-                                              " except " +
-                                              "select month, fltdate, fltno, linecode, khcode, khname, xscode, xsname, sfcode, sfname, agtcode, agtname," +
-                                              "agtcitycode, agtcityname, line, lineflag, hub, cls, seattype, orgncity, destcity, segment, segtype, printdate, passenger," +
-                                              "income, extrafee, standardfee from hubincome_temp";
-                            cmd.ExecuteNonQuery();
-
                             cmd.CommandText = "delete from hubincome where month='" + ImportMonth + "'";
                             cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = "insert hubincome " +
-                                              "select month, fltdate, fltno, linecode, khcode, khname, xscode, xsname, sfcode, sfname, agtcode, agtname," +
-                                              "agtcitycode, agtcityname, line, lineflag, hub, cls, seattype, orgncity, destcity, segment, segtype, printdate, passenger," +
-                                              "income, extrafee, standardfee from hubincome_temp";
-                            cmd.ExecuteNonQuery();
-
-                            cmd.CommandText = "delete hubincome_temp";
-                            cmd.ExecuteNonQuery();
-
+                            InsertIntoTable(table, cmd, filePath); 
                         }
                         else
                         {
