@@ -26,6 +26,7 @@ namespace DTService.Handlers
         cincome,
         cargoincome,
         et,
+        et_temp,
         flightplan,
         groupincome,
         hubincome,
@@ -33,11 +34,7 @@ namespace DTService.Handlers
         lineincome,
         fltincome
 
-    }
-
-    public enum TableName_CN
-    { 
-    }
+    } 
 
     public class DataHandler
     {
@@ -70,6 +67,24 @@ namespace DTService.Handlers
                             cmd.ExecuteNonQuery();
 
                             InsertIntoTable(table, cmd, filePath); 
+                        }
+                        else if (table == TableName.et)
+                        { 
+                            //et的数据文件，有可能一个文件含有很多天的数据，所以需要根据文件的数据的日期来做判断，对数据库进行更新，而不能直接删除原有的数据
+                            //采用一个额外的数据来维护当前文件中所包含的天数，最后根据数组来删除数据库中对应日期的数据，然后再插入新的数据
+                            ArrayList dateAry = InsertIntoEt(cmd, filePath);
+
+                            cmd.CommandText = "delete from et where convert(varchar(12), fltdate, 112) in (";
+                            foreach (string date in dateAry)
+                            {
+                                cmd.CommandText += (string)date.Replace("-", "") + " ";
+                            }
+                            cmd.CommandText += ")";
+                            cmd.ExecuteNonQuery();
+
+                            cmd.CommandText = "insert et select fltdate, sale, localsale, nationalsale, hvpsale, fcsale, wysale, customsale, groupsale, hubsale, directsale," +
+                                              "localhub, nationalhub from et_temp";
+                            cmd.ExecuteNonQuery(); 
                         }
                         else
                         {
@@ -125,35 +140,44 @@ namespace DTService.Handlers
         private void InsertIntoTableWithTxt(TableName table, SqlCommand cmd, string filePath)
         {
             StringBuilder commandText = new StringBuilder();
-            StreamReader sr = new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read),
-                                                              System.Text.Encoding.Default);
-            //fltincome没有表头，所以不同跳过表头这一行
-            if(table != TableName.fltincome)
-              sr.ReadLine();
 
-            string strTemp = sr.ReadLine();
-
-            string[] splits = null;
-            int count = 0;
-            while (strTemp != null)
+            try
             {
-                count++;
-                splits = strTemp.Split('\t');
-                commandText.Append(GenerateInsertStr(table, splits) + "\n");
-                if (count == 5000)
-                {
-                    cmd.CommandText = commandText.ToString();
-                    cmd.ExecuteNonQuery();
-                    count = 0;
-                    commandText.Clear();
-                }
-                strTemp = sr.ReadLine();
-            }
+                StreamReader sr = new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read),
+                                                                  System.Text.Encoding.Default);
+                //fltincome没有表头，所以不用跳过表头这一行
+                if (table != TableName.fltincome)
+                    sr.ReadLine();
 
-            cmd.CommandText = commandText.ToString();
-            cmd.ExecuteNonQuery();
-            sr.Close();
+                string strTemp = sr.ReadLine();
+
+                string[] splits = null;
+                int count = 0;
+                while (strTemp != null)
+                {
+                    count++;
+                    splits = strTemp.Split('\t');
+                    commandText.Append(GenerateInsertStr(table, splits) + "\n");
+                    if (count == 5000)
+                    {
+                        cmd.CommandText = commandText.ToString();
+                        cmd.ExecuteNonQuery();
+                        count = 0;
+                        commandText.Clear();
+                    }
+                    strTemp = sr.ReadLine();
+                }
+
+                cmd.CommandText = commandText.ToString();
+                cmd.ExecuteNonQuery();
+                sr.Close();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
         }
+
         private void InsertIntoTableWithExcel(TableName table, SqlCommand cmd, string filePath)
         {
             StringBuilder commandText = new StringBuilder();
@@ -184,6 +208,44 @@ namespace DTService.Handlers
             {
                 throw new Exception(e.Message);
             }
+        }
+
+        private ArrayList InsertIntoEt(SqlCommand cmd, string filePath)
+        {
+            ArrayList dateAry = new ArrayList();
+            StringBuilder commandText = new StringBuilder();
+            try
+            {
+                var excel = new ExcelQueryFactory(filePath);
+
+                var rows = from v in excel.Worksheet()
+                           select v;
+
+                var count = 0;
+                foreach (var row in rows)
+                {
+                    count++;
+                    if(!dateAry.Contains(row[0].ToString()))
+                    {
+                        dateAry.Add(row[0].ToString());
+                    }
+                    commandText.Append(GenerateInsertStr(TableName.et_temp, GenerateValuesFromExcelRow(row)) + "\n");
+                    if (count == 5000)
+                    {
+                        cmd.CommandText = commandText.ToString();
+                        cmd.ExecuteNonQuery();
+                        count = 0;
+                        commandText.Clear();
+                    }
+                }
+                cmd.CommandText = commandText.ToString();
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+            return dateAry;
         }
 
         //将excel表中的每一行数据转换成对应的字符串数组
@@ -256,18 +318,6 @@ namespace DTService.Handlers
                     throw new Exception("没有对应的table");
             }
             commandText += valueStr.Substring(0, valueStr.Length - 1) + ");";
-            return commandText;
-        }
-
-        private string GenerateSelectIntoStrWithTable(TableName table)
-        {
-            var commandText = "";
-            switch (table)
-            {
-                case TableName.pincome:
-                    commandText = "select * into pincome_temp from pincome where month='201212'";
-                    break;
-            }
             return commandText;
         }
 
@@ -486,6 +536,18 @@ namespace DTService.Handlers
             }
 
             cmd.CommandText = "";
+            return commandText;
+        } 
+
+        private string GenerateSelectIntoStrWithTable(TableName table)
+        {
+            var commandText = "";
+            switch (table)
+            {
+                case TableName.pincome:
+                    commandText = "select * into pincome_temp from pincome where month='201212'";
+                    break;
+            }
             return commandText;
         }
     }
