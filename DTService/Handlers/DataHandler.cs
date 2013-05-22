@@ -30,8 +30,13 @@ namespace DTService.Handlers
         groupincome,
         hubincome,
         hubincome_temp,
-        lineincome
+        lineincome,
+        fltincome
 
+    }
+
+    public enum TableName_CN
+    { 
     }
 
     public class DataHandler
@@ -122,7 +127,10 @@ namespace DTService.Handlers
             StringBuilder commandText = new StringBuilder();
             StreamReader sr = new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read),
                                                               System.Text.Encoding.Default);
-            sr.ReadLine();
+            //fltincome没有表头，所以不同跳过表头这一行
+            if(table != TableName.fltincome)
+              sr.ReadLine();
+
             string strTemp = sr.ReadLine();
 
             string[] splits = null;
@@ -241,6 +249,9 @@ namespace DTService.Handlers
                 case TableName.lineincome:
                     valueStr = InsertWithCommon(values, valueStr);
                     break;
+                case TableName.fltincome:
+                    valueStr = InsertWithFltIncome(values, valueStr);
+                    break;
                 default:
                     throw new Exception("没有对应的table");
             }
@@ -328,6 +339,61 @@ namespace DTService.Handlers
                 count++;
             }
             return valueStr;
+        }
+
+        //数据表中没有‘月日’这个字段(字段序列3)，但是原始数据里面有，所以需要在生成语句的时候删除
+        private string InsertWithFltIncome(string[] values, string valueStr)
+        {
+            var count = 0;
+            foreach (string value in values)
+            {
+                if (count == 2)
+                    continue;
+                if (count == 3)
+                {
+                    valueStr += value.Substring(0, 4);
+                    continue;//eg：2013年
+                }
+                if (count == 4)
+                { 
+                    valueStr += value.Substring(0, 2); 
+                    continue;//eg：05月
+                }
+                if (count == 5)
+                { 
+                    valueStr += value.Substring(2, 2); 
+                    continue;//eg：第19周
+                }
+                if (count == 7)
+                { 
+                    valueStr += "'" + ConvertDayNameToInt(value) + "'"; 
+                    continue;//eg：周一
+                }
+                count++;
+            }
+            return valueStr; 
+        }
+
+        private int ConvertDayNameToInt(string dayName)
+        {
+            switch (dayName)
+            {
+                case "周一":
+                    return 1;
+                case "周二":
+                    return 2;
+                case "周三":
+                    return 3;
+                case "周四":
+                    return 4;
+                case "周五":
+                    return 5;
+                case "周六":
+                    return 6;
+                case "周日":
+                    return 7;
+            }
+            return 0;
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法

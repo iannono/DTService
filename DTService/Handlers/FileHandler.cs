@@ -65,8 +65,8 @@ namespace DTService.Handlers
         /// <summary>
         /// 已经导入的数据文档移动到history文件夹
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="dirPath"></param>
+        /// <param name="filePath">当前需要移动的文件的路径</param>
+        /// <param name="dirPath">需要移动到的目录</param>
         private void MoveToHistory(string filePath, string dirPath)
         {
             if (File.Exists(filePath))
@@ -79,24 +79,27 @@ namespace DTService.Handlers
         private string GetDirPath(TableName table)
         {
             string filePath = ConfigurationManager.AppSettings["FilePath"].ToString();
+            string ftpPath = ConfigurationManager.AppSettings["FtpPath"].ToString();
             switch (table)
             {
                 case TableName.pincome:
-                    return filePath + @"\pincome\";
+                    return filePath + @"\客运销售收入贡献\";
                 case TableName.cincome:
-                    return filePath + @"\cincome\";
+                    return filePath + @"\常客销售收入\";
                 case TableName.cargoincome:
-                    return filePath + @"\cargoincome\";
+                    return filePath + @"\货邮收入\";
                 case TableName.et:
                     return filePath + @"\et\";
                 case TableName.flightplan:
-                    return filePath + @"\flightplan\";
+                    return filePath + @"\航班计划销售贡献指标\";
                 case TableName.groupincome:
-                    return filePath + @"\groupincome\";
+                    return filePath + @"\大客户销售收入\";
                 case TableName.hubincome:
-                    return filePath + @"\hubincome\";
+                    return filePath + @"\枢纽中转销售收入\";
                 case TableName.lineincome:
-                    return filePath + @"\lineincome\";
+                    return filePath + @"\BO航线座公里收入汇总\";
+                case TableName.fltincome:
+                    return ftpPath + @"\fltincome\";
             }
             return filePath;
         }
