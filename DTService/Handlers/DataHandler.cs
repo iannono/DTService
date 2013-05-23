@@ -32,7 +32,8 @@ namespace DTService.Handlers
         hubincome,
         hubincome_temp,
         lineincome,
-        fltincome
+        fltincome,
+        sfincome
 
     } 
 
@@ -70,8 +71,10 @@ namespace DTService.Handlers
                         }
                         else if (table == TableName.et)
                         { 
-                            //et的数据文件，有可能一个文件含有很多天的数据，所以需要根据文件的数据的日期来做判断，对数据库进行更新，而不能直接删除原有的数据
-                            //采用一个额外的数据来维护当前文件中所包含的天数，最后根据数组来删除数据库中对应日期的数据，然后再插入新的数据
+                            //et的数据文件，有可能一个文件含有很多天的数据，所以需要根据文件的数据的日期来做判断
+                            //对数据库进行更新，而不能直接删除原有的数据
+                            //采用一个额外的数据来维护当前文件中所包含的天数
+                            //最后根据数组来删除数据库中对应日期的数据，然后再插入新的数据
                             ArrayList dateAry = InsertIntoEt(cmd, filePath);
 
                             cmd.CommandText = "delete from et where convert(varchar(12), fltdate, 112) in (";
@@ -93,12 +96,11 @@ namespace DTService.Handlers
                     }
                     catch (Exception e)
                     {
-                        var err = e.Message;
                         //to-do
                         //add error log
                         success = false;
                         trans.Rollback();
-                        throw new Exception(e.Message);
+                        throw new Exception("<p class='text-error'>" + e.Message + "</p>");
                     }
                     finally
                     {
@@ -314,6 +316,9 @@ namespace DTService.Handlers
                 case TableName.fltincome:
                     valueStr = InsertWithFltIncome(values, valueStr);
                     break;
+                case TableName.sfincome:
+                    valueStr = InsertWithSfIncome(values, valueStr);
+                    break;
                 default:
                     throw new Exception("没有对应的table");
             }
@@ -444,6 +449,12 @@ namespace DTService.Handlers
                     return 7;
             }
             return 0;
+        }
+
+
+        private string InsertWithSfIncome(string[] values, string valueStr)
+        {
+            throw new NotImplementedException();
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法
