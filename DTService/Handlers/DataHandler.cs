@@ -155,10 +155,17 @@ namespace DTService.Handlers
 
                 string[] splits = null;
                 int count = 0;
+ 
+
                 while (strTemp != null)
                 {
-                    count++;
                     splits = strTemp.Split('\t');
+                    if (count == 0)
+                    {
+                        //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
+                        var importMonth = FilterDateFromFilePath(filePath);
+                        CheckImportDataWithMonth(table, importMonth, splits);
+                    }
                     commandText.Append(GenerateInsertStr(table, splits) + "\n");
                     if (count == 5000)
                     {
@@ -168,6 +175,7 @@ namespace DTService.Handlers
                         commandText.Clear();
                     }
                     strTemp = sr.ReadLine();
+                    count++;
                 }
 
                 cmd.CommandText = commandText.ToString();
@@ -178,6 +186,18 @@ namespace DTService.Handlers
             {
                 throw new Exception(e.Message);
             }
+        }
+
+        private bool CheckImportDataWithMonth(TableName table, string importMonth, string[] values)
+        {
+            switch (table)
+            { 
+                case TableName.pincome:
+                    return (importMonth == values[0]);
+                case TableName.hubincome:
+                    return (importMonth == values[0]);
+            }
+            return false;
         }
 
         private void InsertIntoTableWithExcel(TableName table, SqlCommand cmd, string filePath)
@@ -193,7 +213,12 @@ namespace DTService.Handlers
                 var count = 0;
                 foreach (var row in rows)
                 {
-                    count++;
+                    if (count == 0)
+                    {
+                        //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
+                        var importMonth = FilterDateFromFilePath(filePath);
+                        CheckImportDataWithMonth(table, importMonth, GenerateValuesFromExcelRow(row));
+                    }
                     commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow(row)) + "\n");
                     if(count == 5000)
                     {
@@ -202,6 +227,7 @@ namespace DTService.Handlers
                         count = 0;
                         commandText.Clear();
                     }
+                    count++;
                 }
                 cmd.CommandText = commandText.ToString();
                 cmd.ExecuteNonQuery(); 
@@ -261,21 +287,6 @@ namespace DTService.Handlers
                 count++;
             }
             return values;
-        }
-
-        private string GetHandleCommandText(TableName table, HandleType handleType, string[] values, SqlCommand cmd)
-        {
-            var commandText = "";
-            switch (handleType)
-            {
-                case HandleType.Insert:
-                    commandText = GenerateInsertStr(table, values);
-                    break;
-                case HandleType.UpdateAndInsert:
-                    commandText = GenerateUpdateAndInsertStr(table, values, cmd);
-                    break;
-            }
-            return commandText;
         }
 
 
@@ -450,7 +461,6 @@ namespace DTService.Handlers
             }
             return 0;
         }
-
 
         private string InsertWithSfIncome(string[] values, string valueStr)
         {
