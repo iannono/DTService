@@ -89,6 +89,13 @@ namespace DTService.Handlers
                                               "localhub, nationalhub from et_temp";
                             cmd.ExecuteNonQuery(); 
                         }
+                        else if (table == TableName.fltincome)
+                        {
+                            //对于fltincome表，插入数据后
+                            //还需要从表中选择部分数据，插入其他的表中
+                            InsertIntoTable(table, cmd, filePath);
+
+                        }
                         else
                         {
                             InsertIntoTable(table, cmd, filePath);
@@ -276,6 +283,45 @@ namespace DTService.Handlers
             return dateAry;
         }
 
+        private void InsertIntoFltIncome(SqlCommand cmd, string filePath)
+        {
+            StringBuilder commandText = new StringBuilder();
+            StringBuilder commandTextWithSfincome = new StringBuilder();
+            try
+            {
+                var excel = new ExcelQueryFactory(filePath);
+
+                var rows = from v in excel.Worksheet()
+                           select v;
+
+                var count = 0;
+                foreach (var row in rows)
+                { 
+                    commandText.Append(GenerateInsertStr(TableName.fltincome, GenerateValuesFromExcelRow(row)) + "\n");
+                    commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, GenerateValuesFromExcelRow(row)) + "\n");
+                    if (count == 5000)
+                    {
+                        cmd.CommandText = commandText.ToString();
+                        cmd.ExecuteNonQuery();
+
+                        cmd.CommandText = commandTextWithSfincome.ToString();
+                        cmd.ExecuteNonQuery();
+
+                        count = 0;
+                        commandText.Clear();
+                    }
+                    count++;
+                }
+                cmd.CommandText = commandText.ToString();
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+
         //将excel表中的每一行数据转换成对应的字符串数组
         private string[] GenerateValuesFromExcelRow(LinqToExcel.Row row)
         { 
@@ -394,7 +440,7 @@ namespace DTService.Handlers
             {
                 if (count == 3 || count == 4 || count == 5)
                 {
-                    //去除日期中的‘，’,根据数据库的设置，只取前6位
+                    //int型
                     valueStr += value + ",";
                 }
                 else
@@ -412,32 +458,57 @@ namespace DTService.Handlers
         {
             var count = 0;
             foreach (string value in values)
-            {
-                if (count == 2)
-                    continue;
-                if (count == 3)
+            { 
+                count++;
+
+                if (count > 10)
                 {
-                    valueStr += value.Substring(0, 4);
-                    continue;//eg：2013年
+                    valueStr = "'" + value + "',";
+                    continue;
                 }
+                if (count == 3)
+                    continue;
                 if (count == 4)
-                { 
-                    valueStr += value.Substring(0, 2); 
-                    continue;//eg：05月
+                {
+                    valueStr += "'" + value.Substring(0, 4) + "',";
+                    continue;//eg：2013年
                 }
                 if (count == 5)
                 { 
-                    valueStr += value.Substring(2, 2); 
+                    valueStr += "'" + value.Substring(0, 2) + "',"; 
+                    continue;//eg：05月
+                }
+                if (count == 6)
+                { 
+                    valueStr += "'" + value.Substring(2, 2) + "',"; 
                     continue;//eg：第19周
                 }
-                if (count == 7)
+                if (count == 8)
                 { 
-                    valueStr += "'" + ConvertDayNameToInt(value) + "'"; 
+                    valueStr += "'" + ConvertDayNameToInt(value) + "',"; 
                     continue;//eg：周一
                 }
-                count++;
+                if(count == 10)
+                {
+                    valueStr += "'" + value + "','" + GenerateCarriernameunionFromCarriername(value) + "',";
+                    continue;
+                }
+
+                valueStr += "'" + value + "',"; 
             }
+
             return valueStr; 
+        }
+
+        private string GenerateCarriernameunionFromCarriername(string carriername)
+        {
+            if(carriername == "国航" || carriername == "深航")
+                return "国深航";
+            
+            if(carriername == "上航" || carriername == "东航")
+                return "东上航";
+
+            return carriername;
         }
 
         private int ConvertDayNameToInt(string dayName)
