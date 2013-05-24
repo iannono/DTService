@@ -298,7 +298,9 @@ namespace DTService.Handlers
                 foreach (var row in rows)
                 { 
                     commandText.Append(GenerateInsertStr(TableName.fltincome, GenerateValuesFromExcelRow(row)) + "\n");
+
                     commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, GenerateValuesFromExcelRow(row)) + "\n");
+
                     if (count == 5000)
                     {
                         cmd.CommandText = commandText.ToString();
@@ -535,7 +537,40 @@ namespace DTService.Handlers
 
         private string InsertWithSfIncome(string[] values, string valueStr)
         {
-            throw new NotImplementedException();
+            //Sfincome需要选择承运人为"CZ"数据
+            if (values[7] != "CZ")
+                return "";
+
+            //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等才需要录入到Sfincome;
+            if (FilterLine(values[17]))
+            {
+                valueStr += "'" + valueStr[0] + "'" + //fltdate
+                            "'" + valueStr[1] + "'" + //company
+                            "'" + valueStr[1] + "'" + //fltno
+                            "'" + valueStr[1] + "'" + //flttime
+                            "'" + valueStr[1] + "'" + //line
+                            "'" + valueStr[1] + "'" + //linetype
+                            "'" + valueStr[1] + "'" + //linename
+                            "'" + valueStr[1] + "'" + //linecode
+                            "'" + valueStr[1] + "'" + //fltmodel
+                            "'" + 1 + "'" + //freq班次暂时写1
+                            "'" + valueStr[1] + "'" + //passenger
+                            "'" + valueStr[1] + "'" + //kegongli
+                            "'" + valueStr[1] + "'" + //zuogongli
+                            "'" + 0 + "'" + //flyhour飞行小时，需要在另外一张表中取，暂时为0
+                            "'" + valueStr[1] + "'" + //pincome
+                            "'" + valueStr[1] + "'" + //oil
+                            "'" + valueStr[1] + "'" + //pincomeoil
+                            "'" + valueStr[1] + "'";  //ticketincome
+            }
+            return valueStr;
+        }
+
+        private bool FilterLine(string line)
+        {
+            if (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0)
+                return true;
+            return false;
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法
