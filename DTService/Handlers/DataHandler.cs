@@ -40,7 +40,6 @@ namespace DTService.Handlers
     public class DataHandler
     {
         string _connStr = ConfigurationManager.ConnectionStrings["omsConnectionString"].ToString();
-        StringBuilder _sfIncomeInsertStr = new StringBuilder();
 
         public bool HandleData(TableName table, string filePath)
         {
@@ -81,9 +80,9 @@ namespace DTService.Handlers
                             cmd.CommandText = "delete from et where convert(varchar(12), fltdate, 112) in (";
                             foreach (string date in dateAry)
                             {
-                                cmd.CommandText += (string)date.Replace("-", "") + " ";
+                                cmd.CommandText += "'" + (string)date.Replace("-", "") + "',";
                             }
-                            cmd.CommandText += ")";
+                            cmd.CommandText = cmd.CommandText.Substring(0, cmd.CommandText.Length - 1) + ")";
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "insert et select fltdate, sale, localsale, nationalsale, hvpsale, fcsale, wysale, customsale, groupsale, hubsale, directsale," +
@@ -94,8 +93,7 @@ namespace DTService.Handlers
                         {
                             //对于fltincome表，插入数据后
                             //还需要从表中选择部分数据，插入其他的表中
-                            InsertIntoTable(table, cmd, filePath);
-
+                            InsertIntoFltIncome(cmd, filePath); 
                         }
                         else
                         {
@@ -295,27 +293,85 @@ namespace DTService.Handlers
                 var rows = from v in excel.Worksheet()
                            select v;
 
+                var columnNum = rows.First().ToArray().Length;
+                string[] valuesForUnion = new String[columnNum];
+                var countForUnion = 0;
+
                 var count = 0;
                 foreach (var row in rows)
                 { 
-                    commandText.Append(GenerateInsertStr(TableName.fltincome, GenerateValuesFromExcelRow(row)) + "\n");
-
-                    //commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, GenerateValuesFromExcelRow(row)) + "\n");
-
-                    if (count == 5000)
-                    {
-                        cmd.CommandText = commandText.ToString();
-                        cmd.ExecuteNonQuery();
-
-                        cmd.CommandText = commandTextWithSfincome.ToString();
-                        cmd.ExecuteNonQuery();
-
-                        count = 0;
-                        commandText.Clear();
-                    }
                     count++;
+                    var values = GenerateValuesFromExcelRow(row);
+                    commandText.Append(GenerateInsertStr(TableName.fltincome, values) + "\n");
+
+
+                    //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
+                    //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等才需要录入到Sfincome;
+                    if (!FilterLine(row[8].ToString(), row[16].ToString()))
+                      continue;
+                    //如果数据中的航线类别为“联程”,则在转换之前需要先进行合并操作
+                    if (row[10].ToString() == "联程")
+                    {
+                        if (countForUnion == 0)
+                            countForUnion = count;
+
+                        //联程航线都是以3条为单位
+                        //当每一组联程航线到达第三条数据的时候，就需要生成插入语句
+
+                        //---TODO---
+                        //可以对临时联程数组做优化，只需要生成保存需要合并的字段数量的数组
+                        //即：string[] valuesForUnion = new String[7];
+
+                        if (count < countForUnion + 2)
+                        {
+                            valuesForUnion[51] = (Convert.ToInt32(valuesForUnion[51]) + Convert.ToInt32(row[51].ToString())).ToString();
+                            valuesForUnion[53] = (Convert.ToInt32(valuesForUnion[53]) + Convert.ToInt32(row[53].ToString())).ToString();
+                            valuesForUnion[61] = (Convert.ToInt32(valuesForUnion[61]) + Convert.ToInt32(row[61].ToString())).ToString();
+                            valuesForUnion[62] = (Convert.ToDecimal(valuesForUnion[62]) + Convert.ToDecimal(row[62].ToString())).ToString();
+                            valuesForUnion[66] = (Convert.ToInt32(valuesForUnion[66]) + Convert.ToInt32(row[66].ToString())).ToString();
+                            valuesForUnion[91] = (Convert.ToInt32(valuesForUnion[91]) + Convert.ToInt32(row[91].ToString())).ToString();
+                            //对联程航班，各航段中的航线性质取国际>地区>国内，比如同时有地区和国内则为地区
+                            valuesForUnion[20] = FilterLineTypes(valuesForUnion[20] + "," + row[20].ToString());
+
+                        } 
+                        else if (count == countForUnion + 2)
+                        {
+
+                            valuesForUnion[51] = (Convert.ToInt32(valuesForUnion[51]) + Convert.ToInt32(row[51].ToString())).ToString();
+                            valuesForUnion[53] = (Convert.ToInt32(valuesForUnion[53]) + Convert.ToInt32(row[53].ToString())).ToString();
+                            valuesForUnion[61] = (Convert.ToInt32(valuesForUnion[61]) + Convert.ToInt32(row[61].ToString())).ToString();
+                            valuesForUnion[62] = (Convert.ToDecimal(valuesForUnion[62]) + Convert.ToDecimal(row[62].ToString())).ToString();
+                            valuesForUnion[66] = (Convert.ToInt32(valuesForUnion[66]) + Convert.ToInt32(row[66].ToString())).ToString();
+                            valuesForUnion[91] = (Convert.ToInt32(valuesForUnion[91]) + Convert.ToInt32(row[91].ToString())).ToString(); 
+                            //对联程航班，各航段中的航线性质取国际>地区>国内，比如同时有地区和国内则为地区
+                            valuesForUnion[20] = FilterLineTypes(valuesForUnion[20] + "," + row[20].ToString());
+
+                            values[20] = valuesForUnion[20];
+                            values[51] = valuesForUnion[51];
+                            values[53] = valuesForUnion[53];
+                            values[61] = valuesForUnion[61];
+                            values[66] = valuesForUnion[66];
+                            values[91] = valuesForUnion[91];
+
+                            commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
+
+                            countForUnion = 0;//重新计数，用于每次只选择联程的3条数据
+                            valuesForUnion = new String[columnNum];
+
+                        }
+                    }
+                    else
+                    {
+                        //非联程数据，直接转换
+                        commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
+                    }
+                    //-------sfincome结束--------------//
                 }
+
                 cmd.CommandText = commandText.ToString();
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = commandTextWithSfincome.ToString();
                 cmd.ExecuteNonQuery();
             }
             catch (Exception e)
@@ -354,9 +410,12 @@ namespace DTService.Handlers
                     valueStr = InsertWithPincome(values, valueStr);
                     break;
                 case TableName.cincome:
-                    valueStr = InsertWithPincome(values, valueStr);
+                    valueStr = InsertWithCommon(values, valueStr);
                     break;
                 case TableName.et:
+                    valueStr = InsertWithCommon(values, valueStr);
+                    break;
+                case TableName.et_temp:
                     valueStr = InsertWithCommon(values, valueStr);
                     break;
                 case TableName.flightplan:
@@ -547,40 +606,59 @@ namespace DTService.Handlers
 
         private string InsertWithSfIncome(string[] values, string valueStr)
         {
-            //Sfincome需要选择承运人为"CZ"数据
-            if (values[7] != "CZ")
-                return "";
 
-            //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等才需要录入到Sfincome;
-            if (FilterLine(values[17]))
-            {
-                valueStr += "'" + valueStr[0] + "'" + //fltdate
-                            "'" + valueStr[1] + "'" + //company
-                            "'" + valueStr[1] + "'" + //fltno
-                            "'" + valueStr[1] + "'" + //flttime
-                            "'" + valueStr[1] + "'" + //line
-                            "'" + valueStr[1] + "'" + //linetype
-                            "'" + valueStr[1] + "'" + //linename
-                            "'" + valueStr[1] + "'" + //linecode
-                            "'" + valueStr[1] + "'" + //fltmodel
-                            "'" + 1 + "'" + //freq班次暂时写1
-                            "'" + valueStr[1] + "'" + //passenger
-                            "'" + valueStr[1] + "'" + //kegongli
-                            "'" + valueStr[1] + "'" + //zuogongli
-                            "'" + 0 + "'" + //flyhour飞行小时，需要在另外一张表中取，暂时为0
-                            "'" + valueStr[1] + "'" + //pincome
-                            "'" + valueStr[1] + "'" + //oil
-                            "'" + valueStr[1] + "'" + //pincomeoil
-                            "'" + valueStr[1] + "'";  //ticketincome
-            }
+            valueStr += "'" + values[0] + "'," + //航班日期fltdate：对应飞行日期fltdate
+                        "'" + values[39] + "'," + //执行单位company：对应执行单位company
+                        "'" + values[11] + "'," + //航班号fltno：对应航班号fltno
+                        "'" + values[34] + "'," + //起飞时间flttime：对应起飞时间flttime
+                        //航线性质line，需要根据fltincome中的加班标志和包机标志动态生成,35:包机标志、37：加班标志
+                        "'" + GetLineValueFromCharterFlagAndOvertimeFlag(values[35], values[37]) + "'," +
+                        "'" + values[20] + "'," + //航线分类linetype：对应航线性质linetype
+                        "'" + values[21] + "'," + //航线中文linename：对应航线中文linename
+                        "'" + values[16] + "'," + //航线三字码linecode:对应航线line
+                        "'" + values[33] + "'," + //机型fltmodel：对应机型pmmodel
+                        "'" + 1 + "'," + //freq班次暂时写1
+                        "'" + values[51] + "'," + //旅客人数passenger：对应登机数快报boarding 联程各航段求和
+                        "'" + values[53] + "'," + //客公里kegongli：对应客公里快报kegongli 联程各航段求和
+                        "'" + values[66] + "'," + //座公里zuogongli：对应座公里航节zuogonglileg 联程各航段求和
+                        "'" + 0 + "'," + //flyhour飞行小时，需要在另外一张表中取，暂时为0 
+                        "'" + values[62] + "'," + //客行收入pincome：对应收入快报income 联程各航段求和
+                        "'" + values[91] + "'," + //燃油附加费收入oil：对应燃油附加费oil 联程各航段求和
+                        "'" + (Convert.ToDecimal(values[62]) + Convert.ToDecimal(values[91])) + "'," + //客行收入合计（含燃油）pincomeoil：对应客行收入（sfincome） + 燃油附加费收入（sfincome）入
+                        "'" + values[61] + "',";  //全票收入ticketincome：对应全票价收入Y舱全票价fullpricey 联程各航段求和
+
             return valueStr;
         }
 
-        private bool FilterLine(string line)
+        private bool FilterLine(string carrier, string line)
         {
-            if (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0)
+            if (carrier == "CZ" && (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0))
                 return true;
             return false;
+        }
+
+        private string FilterLineTypes(string lineTypes)
+        {
+            if (lineTypes.Contains("国际"))
+                return "国际";
+            if (lineTypes.Contains("地区"))
+                return "地区";
+
+            return "国内";
+        }
+
+        private string GetLineValueFromCharterFlagAndOvertimeFlag(string charterFlag, string overtimeFlag)
+        {
+            switch (charterFlag + overtimeFlag)
+            { 
+                case "00":
+                    return "正班";
+                case "10":
+                    return "包机";
+                case "01":
+                    return "加班";
+            }
+            return charterFlag + overtimeFlag;
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法
@@ -611,6 +689,7 @@ namespace DTService.Handlers
         }
 
         //以下方法暂时没有作用，未来可以视情况进行删除
+        #region
         private string UpdateWithPincome(string[] values, string commandText, string[] columnKeys)
         {
             var count = 0;
@@ -687,5 +766,6 @@ namespace DTService.Handlers
             }
             return commandText;
         }
+        #endregion
     }
 }
