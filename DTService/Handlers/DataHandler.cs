@@ -40,6 +40,7 @@ namespace DTService.Handlers
     public class DataHandler
     {
         string _connStr = ConfigurationManager.ConnectionStrings["omsConnectionString"].ToString();
+        StringBuilder _sfIncomeInsertStr = new StringBuilder();
 
         public bool HandleData(TableName table, string filePath)
         {
@@ -220,7 +221,7 @@ namespace DTService.Handlers
                 var count = 0;
                 foreach (var row in rows)
                 {
-                    if (count == 0)
+                    if (count == 0 && (table == TableName.pincome || table == TableName.hubincome))
                     {
                         //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
                         var importMonth = FilterDateFromFilePath(filePath);
@@ -299,7 +300,7 @@ namespace DTService.Handlers
                 { 
                     commandText.Append(GenerateInsertStr(TableName.fltincome, GenerateValuesFromExcelRow(row)) + "\n");
 
-                    commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, GenerateValuesFromExcelRow(row)) + "\n");
+                    //commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, GenerateValuesFromExcelRow(row)) + "\n");
 
                     if (count == 5000)
                     {
@@ -339,6 +340,7 @@ namespace DTService.Handlers
 
 
         //针对不同的数据表需要转换不同的数据格式以及更新不同的字段
+        //生成每条插入数据的sql语句
         private string GenerateInsertStr(TableName table, string[] values)
         {
             var commandText = "insert into " + Enum.GetName(typeof(TableName), table) + " (" + FilterEscape(ConfigurationManager.AppSettings[Enum.GetName(typeof(TableName), table)].ToString()) + ") ";
@@ -410,6 +412,7 @@ namespace DTService.Handlers
             }
             return valueStr;
         }
+
         //hubincome
         private string InsertWithHubIncome(string[] values, string valueStr)
         {
@@ -434,6 +437,7 @@ namespace DTService.Handlers
             }
             return valueStr;
         }
+
         //flightplan
         private string InsertWithFlightPlan(string[] values, string valueStr)
         {
@@ -465,8 +469,13 @@ namespace DTService.Handlers
 
                 if (count > 10)
                 {
-                    valueStr = "'" + value + "',";
+                    valueStr += "'" + value + "',";
                     continue;
+                }
+                if (count == 2)
+                {
+                    valueStr += "'" + value.Replace("-", "") + "',";
+                    continue;//eg：2013年
                 }
                 if (count == 3)
                     continue;
@@ -482,7 +491,7 @@ namespace DTService.Handlers
                 }
                 if (count == 6)
                 { 
-                    valueStr += "'" + value.Substring(2, 2) + "',"; 
+                    valueStr += "'" + value.Substring(1, 2) + "',"; 
                     continue;//eg：第19周
                 }
                 if (count == 8)
@@ -502,6 +511,7 @@ namespace DTService.Handlers
             return valueStr; 
         }
 
+        //生成重组后承运人信息
         private string GenerateCarriernameunionFromCarriername(string carriername)
         {
             if(carriername == "国航" || carriername == "深航")
