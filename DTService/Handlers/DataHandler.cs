@@ -692,6 +692,10 @@ namespace DTService.Handlers
             return value;
         }
 
+
+
+        //以下方法暂时没有作用，未来可以视情况进行删除
+        #region
         private string GenerateUpdateStr(TableName table, string[] values)
         {
             var commandText = "update " + Enum.GetName(typeof(TableName), table) + " set ";
@@ -700,8 +704,6 @@ namespace DTService.Handlers
             return commandText;
         }
 
-        //以下方法暂时没有作用，未来可以视情况进行删除
-        #region
         private string UpdateWithPincome(string[] values, string commandText, string[] columnKeys)
         {
             var count = 0;
