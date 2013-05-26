@@ -80,14 +80,17 @@ namespace DTService.Handlers
                             cmd.CommandText = "delete from et where convert(varchar(12), fltdate, 112) in (";
                             foreach (string date in dateAry)
                             {
-                                cmd.CommandText += "'" + (string)date.Replace("-", "") + "',";
+                                cmd.CommandText += "'" + Convert.ToDateTime(date).ToString("yyyyMMdd") + "',";
                             }
                             cmd.CommandText = cmd.CommandText.Substring(0, cmd.CommandText.Length - 1) + ")";
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "insert et select fltdate, sale, localsale, nationalsale, hvpsale, fcsale, wysale, customsale, groupsale, hubsale, directsale," +
                                               "localhub, nationalhub from et_temp";
-                            cmd.ExecuteNonQuery(); 
+                            cmd.ExecuteNonQuery();
+
+                            cmd.CommandText = "delete from et_temp";
+                            cmd.ExecuteNonQuery();
                         }
                         else if (table == TableName.fltincome)
                         {
