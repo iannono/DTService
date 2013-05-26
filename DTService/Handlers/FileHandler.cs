@@ -30,22 +30,29 @@ namespace DTService.Handlers
                 {
                     if (File.Exists(filePath))
                     {
-                        success = dataHandler.HandleData(table, filePath);
-                        if (success)
+                        try
                         {
-                            results += "<p>" + Enum.GetName(typeof(TableName), table) + ": <span class='label label-success'>成功！</span></p>";
-                            try
+                            success = dataHandler.HandleData(table, filePath);
+                            if (success)
                             {
-                                MoveToHistory(filePath, dir);
+                                results += "<p>" + Enum.GetName(typeof(TableName), table) + "(文件路径：" + filePath + "): <span class='label label-success'>成功！</span></p>";
+                                try
+                                {
+                                    MoveToHistory(filePath, dir);
+                                }
+                                catch
+                                {
+                                    throw new Exception(results + "<p class='text-error'>由于无法将导入完成的文件(" + filePath + ")移动到history文件夹，导入中止，请检查该文件是否已经打开，或者该文件夹下是否有同名文件，如果有，请手动移动该文件!</p>");
+                                }
                             }
-                            catch
+                            else
                             {
-                                throw new Exception(results + "<p class='text-error'>由于无法将导入完成的文件(" + filePath +")移动到history文件夹，导入中止，请检查该文件是否已经打开，或者该文件夹下是否有同名文件，如果有，请手动移动该文件!</p>");
+                                results += "<p>" + Enum.GetName(typeof(TableName), table) + ":<span class='label label-important'>失败！</span></p>";
                             }
                         }
-                        else
+                        catch(Exception e)
                         {
-                            results += "<p>" + Enum.GetName(typeof(TableName), table) + ":<span class='label label-important'>失败！</span></p>";
+                            results += e.Message;
                         }
                     }
                 }

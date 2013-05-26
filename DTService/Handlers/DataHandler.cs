@@ -124,7 +124,12 @@ namespace DTService.Handlers
         //所以需要文件的名称的头6个字母标明当前的数据所属的月份
         private string FilterDateFromFilePath(string filePath)
         {
-            var ImportDate = filePath.Substring(0, 6);
+            var ImportDate = "";
+            if (File.Exists(filePath))
+            {
+                var fileInfo = new FileInfo(filePath); 
+                 ImportDate = fileInfo.Name.Substring(0, 6); 
+            }
             return ImportDate; 
         }
 
@@ -167,10 +172,13 @@ namespace DTService.Handlers
                 {
                     splits = strTemp.Split('\t');
                     if (count == 0)
-                    {
+                    { 
                         //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
+                        //目前的检查只是针对第一条进行判断
                         var importMonth = FilterDateFromFilePath(filePath);
-                        CheckImportDataWithMonth(table, importMonth, splits);
+                        if (!CheckImportDataWithMonth(table, importMonth, splits))
+                            throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
+
                     }
                     commandText.Append(GenerateInsertStr(table, splits) + "\n");
                     if (count == 5000)
@@ -194,14 +202,15 @@ namespace DTService.Handlers
             }
         }
 
+        //检查插入的数据和文件名前面的月份是否一致
         private bool CheckImportDataWithMonth(TableName table, string importMonth, string[] values)
         {
             switch (table)
             { 
                 case TableName.pincome:
-                    return (importMonth == values[0]);
+                    return (importMonth == values[0].Replace(",", "").Substring(0, 6));
                 case TableName.hubincome:
-                    return (importMonth == values[0]);
+                    return (importMonth == values[0].Replace(",", "").Substring(0, 6));
             }
             return false;
         }
