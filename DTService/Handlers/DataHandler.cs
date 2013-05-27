@@ -435,7 +435,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithFlightPlan(values, valueStr);
                     break;
                 case TableName.groupincome:
-                    valueStr = InsertWithCommon(values, valueStr);
+                    valueStr = InsertWithGroupIncome(values, valueStr);
                     break;
                 case TableName.hubincome:
                     valueStr = InsertWithHubIncome(values, valueStr);
@@ -475,6 +475,10 @@ namespace DTService.Handlers
                 {
                     valueStr += "'" + value.Replace(",", "").Substring(0, 8) + "',"; 
                 }
+                else if (count == 10)
+                {
+                    valueStr += "'" + DeleteAgtCodeWithZero(value) + "',";
+                }
                 else
                 {
                     //去除日期和金额中的','
@@ -500,6 +504,10 @@ namespace DTService.Handlers
                 {
                     valueStr += "'" + value.Replace(",", "").Substring(0, 8) + "',";
                 }
+                else if (count == 10)
+                {
+                    valueStr += "'" + DeleteAgtCodeWithZero(value) + "',";
+                }
                 else
                 {
                     //去除日期和金额中的','
@@ -510,6 +518,41 @@ namespace DTService.Handlers
             return valueStr;
         }
 
+        private string InsertWithCIncome(string[] values, string valueStr)
+        {
+            var count = 0;
+            foreach (string value in values)
+            {
+                if (count == 1)
+                {
+                    valueStr += "'" + DeleteAgtCodeWithZero(value) + "',";
+                }
+                else
+                {
+                    valueStr += "'" + value.Replace(",", "").Replace("'", "''") + "',";
+                }
+                count++;
+            }
+            return valueStr;
+        }
+
+        private string InsertWithGroupIncome(string[] values, string valueStr)
+        {
+            var count = 0;
+            foreach (string value in values)
+            {
+                if (count == 2 || count == 9)
+                {
+                    valueStr += "'" + DeleteAgtCodeWithZero(value) + "',";
+                }
+                else
+                {
+                    valueStr += "'" + value.Replace(",", "").Replace("'", "''") + "',";
+                }
+                count++;
+            }
+            return valueStr;
+        }
         //flightplan
         private string InsertWithFlightPlan(string[] values, string valueStr)
         {
@@ -615,6 +658,11 @@ namespace DTService.Handlers
                     return 7;
             }
             return 0;
+        }
+
+        private int DeleteAgtCodeWithZero(string agtCode)
+        {
+            return Convert.ToInt32(agtCode);
         }
 
         private string InsertWithSfIncome(string[] values, string valueStr)
