@@ -174,7 +174,7 @@ namespace DTService.Handlers
                 while (strTemp != null)
                 {
                     splits = strTemp.Split('\t');
-                    if (count == 0)
+                    if (count == 0 && (table == TableName.pincome || table == TableName.hubincome))
                     { 
                         //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
                         //目前的检查只是针对第一条进行判断
@@ -235,7 +235,8 @@ namespace DTService.Handlers
                     {
                         //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
                         var importMonth = FilterDateFromFilePath(filePath);
-                        CheckImportDataWithMonth(table, importMonth, GenerateValuesFromExcelRow(row));
+                        if (!CheckImportDataWithMonth(table, importMonth, GenerateValuesFromExcelRow(row)))
+                            throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
                     }
                     commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow(row)) + "\n");
                     if(count == 5000)

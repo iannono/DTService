@@ -49,7 +49,6 @@ D:\Coding\DTService\DTService\bin\Remotion.Data.Linq.dll
 D:\Coding\DTService\DTService\bin\Remotion.dll
 D:\Coding\DTService\DTService\bin\Remotion.Interfaces.dll
 D:\Coding\DTService\DTService\bin\LinqToExcel.xml
-D:\100 Project\DTService\DTService\obj\Debug\DTService.csprojResolveAssemblyReference.cache
 D:\100 Project\DTService\DTService\obj\Debug\DTService.dll
 D:\100 Project\DTService\DTService\obj\Debug\DTService.pdb
 D:\100 Project\DTService\DTService\bin\DTService.dll
@@ -100,3 +99,4 @@ D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.Razor.resources.dll
 D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.WebPages.resources.dll
 D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.WebPages.Deployment.resources.dll
 D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.WebPages.Razor.resources.dll
+D:\100 Project\DTService\DTService\obj\Debug\DTService.csprojResolveAssemblyReference.cache
