@@ -130,8 +130,8 @@ namespace DTService.Handlers
             var ImportDate = "";
             if (File.Exists(filePath))
             {
-                var fileInfo = new FileInfo(filePath); 
-                 ImportDate = fileInfo.Name.Substring(0, 6); 
+                var fileInfo = new FileInfo(filePath);
+                ImportDate = fileInfo.Name.Substring(0, 6); 
             }
             return ImportDate; 
         }
@@ -423,7 +423,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithPincome(values, valueStr);
                     break;
                 case TableName.cincome:
-                    valueStr = InsertWithCommon(values, valueStr);
+                    valueStr = InsertWithCIncome(values, valueStr);
                     break;
                 case TableName.et:
                     valueStr = InsertWithCommon(values, valueStr);
