@@ -223,7 +223,7 @@ namespace DTService.Handlers
             StringBuilder commandText = new StringBuilder();
             try
             {
-                var excel = new ExcelQueryFactory(filePath); 
+                var excel = new ExcelQueryFactory(filePath);
 
                 var rows = from v in excel.Worksheet()
                            select v;
@@ -238,7 +238,7 @@ namespace DTService.Handlers
                         if (!CheckImportDataWithMonth(table, importMonth, GenerateValuesFromExcelRow(row)))
                             throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
                     }
-                    commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow(row)) + "\n");
+                    commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow((LinqToExcel.Row)row)) + "\n");
                     if(count == 5000)
                     {
                         cmd.CommandText = commandText.ToString();
@@ -303,7 +303,7 @@ namespace DTService.Handlers
             {
                 var excel = new ExcelQueryFactory(filePath);
 
-                var rows = from v in excel.Worksheet()
+                var rows = from v in excel.WorksheetNoHeader()
                            select v;
 
                 var columnNum = rows.First().ToArray().Length;
@@ -314,7 +314,7 @@ namespace DTService.Handlers
                 foreach (var row in rows)
                 { 
                     count++;
-                    var values = GenerateValuesFromExcelRow(row);
+                    var values = GenerateValuesFromExcelRowNoHeader(row);
                     commandText.Append(GenerateInsertStr(TableName.fltincome, values) + "\n");
 
 
@@ -401,6 +401,17 @@ namespace DTService.Handlers
             var count = 0;
             foreach (var value in row.ToArray())
             { 
+                values[count] = value.ToString();
+                count++;
+            }
+            return values;
+        }
+        private string[] GenerateValuesFromExcelRowNoHeader(LinqToExcel.RowNoHeader row)
+        {
+            string[] values = new String[row.ToArray().Length];
+            var count = 0;
+            foreach (var value in row.ToArray())
+            {
                 values[count] = value.ToString();
                 count++;
             }
@@ -529,7 +540,7 @@ namespace DTService.Handlers
                 }
                 else
                 {
-                    valueStr += "'" + value.Replace(",", "").Replace("'", "''") + "',";
+                    valueStr += "'" + value.Replace(",", "").Replace("'", "''").Replace(@"""","") + "',";
                 }
                 count++;
             }
@@ -559,10 +570,14 @@ namespace DTService.Handlers
             var count = 0;
             foreach (string value in values)
             {
-                if (count == 3 || count == 4 || count == 5)
+                if (count == 3 || count == 4)
                 {
                     //int型
                     valueStr += value + ",";
+                }
+                else if (count == 5)
+                {
+                    valueStr += Math.Round(Convert.ToDecimal(value), MidpointRounding.AwayFromZero) + ",";
                 }
                 else
                 {
