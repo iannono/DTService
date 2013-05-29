@@ -48,7 +48,6 @@ D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.Razor.resources.dll
 D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.WebPages.resources.dll
 D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.WebPages.Deployment.resources.dll
 D:\100 Project\DTService\DTService\bin\zh-Hans\System.Web.WebPages.Razor.resources.dll
-D:\100 Project\DTService\DTService\obj\Debug\DTService.csprojResolveAssemblyReference.cache
 D:\Coding\DTService\DTService\bin\DTService.dll
 D:\Coding\DTService\DTService\bin\DTService.pdb
 D:\Coding\DTService\DTService\bin\Antlr3.Runtime.dll
