@@ -352,7 +352,7 @@ namespace DTService.Handlers
                             valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
                             valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
                             valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
-                            valuesForUnion[6] = (Convert.ToInt32(valuesForUnion[6]) + Convert.ToInt32(values[91])).ToString();
+                            valuesForUnion[6] = Math.Round((Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])), MidpointRounding.AwayFromZero).ToString();
 
 
                         } 
@@ -366,7 +366,7 @@ namespace DTService.Handlers
                             valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
                             valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
                             valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
-                            valuesForUnion[6] = (Convert.ToInt32(valuesForUnion[6]) + Convert.ToInt32(values[91])).ToString(); 
+                            valuesForUnion[6] = Math.Round((Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])), MidpointRounding.AwayFromZero).ToString();
 
 
                             values[20] = valuesForUnion[0];
@@ -608,15 +608,16 @@ namespace DTService.Handlers
             { 
                 count++;
 
-                if (count > 10)
+                if (count > 10 && count < 92)
                 {
                     valueStr += "'" + value + "',";
                     continue;
                 }
                 if (count == 2)
                 {
+                    //这个字段根据文件类型的不同，读取的内容会有差异（csv：2013-05；xlsx：2013/05/01 00:00:00）
                     valueStr += "'" + value.Replace("-", "") + "',";
-                    continue;//eg：2013年
+                    continue;//eg：201305
                 }
                 if (count == 3)
                     continue;
@@ -643,6 +644,11 @@ namespace DTService.Handlers
                 if(count == 10)
                 {
                     valueStr += "'" + value + "','" + GenerateCarriernameunionFromCarriername(value) + "',";
+                    continue;
+                }
+                if (count == 92)
+                {
+                    valueStr += "" + Math.Round(Convert.ToDecimal(value), MidpointRounding.AwayFromZero) + ",";
                     continue;
                 }
 
