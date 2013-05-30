@@ -307,7 +307,7 @@ namespace DTService.Handlers
                            select v;
 
                 var columnNum = rows.First().ToArray().Length;
-                string[] valuesForUnion = new String[columnNum];
+                string[] valuesForUnion = new String[7];
                 var countForUnion = 0;
 
                 var count = 0;
@@ -317,13 +317,20 @@ namespace DTService.Handlers
                     var values = GenerateValuesFromExcelRowNoHeader(row);
                     commandText.Append(GenerateInsertStr(TableName.fltincome, values) + "\n");
 
+                    if (count%5000 == 0)
+                    { 
+                        cmd.CommandText = commandText.ToString();
+                        cmd.ExecuteNonQuery();
+                        commandText.Clear();
+                    }
+
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
                     //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等才需要录入到Sfincome;
                     if (!FilterLine(row[8].ToString(), row[16].ToString()))
                       continue;
                     //如果数据中的航线类别为“联程”,则在转换之前需要先进行合并操作
-                    if (row[10].ToString() == "联程")
+                    if (values[10].ToString() == "联程")
                     {
                         if (countForUnion == 0)
                             countForUnion = count;
@@ -336,40 +343,44 @@ namespace DTService.Handlers
                         //即：string[] valuesForUnion = new String[7];
 
                         if (count < countForUnion + 2)
-                        {
-                            valuesForUnion[51] = (Convert.ToInt32(valuesForUnion[51]) + Convert.ToInt32(row[51].ToString())).ToString();
-                            valuesForUnion[53] = (Convert.ToInt32(valuesForUnion[53]) + Convert.ToInt32(row[53].ToString())).ToString();
-                            valuesForUnion[61] = (Convert.ToInt32(valuesForUnion[61]) + Convert.ToInt32(row[61].ToString())).ToString();
-                            valuesForUnion[62] = (Convert.ToDecimal(valuesForUnion[62]) + Convert.ToDecimal(row[62].ToString())).ToString();
-                            valuesForUnion[66] = (Convert.ToInt32(valuesForUnion[66]) + Convert.ToInt32(row[66].ToString())).ToString();
-                            valuesForUnion[91] = (Convert.ToInt32(valuesForUnion[91]) + Convert.ToInt32(row[91].ToString())).ToString();
+                        {                            
                             //对联程航班，各航段中的航线性质取国际>地区>国内，比如同时有地区和国内则为地区
-                            valuesForUnion[20] = FilterLineTypes(valuesForUnion[20] + "," + row[20].ToString());
+                            valuesForUnion[0] = FilterLineTypes(valuesForUnion[0] + "," + values[20].ToString());
+
+                            valuesForUnion[1] = (Convert.ToInt32(valuesForUnion[1]) + Convert.ToInt32(values[51])).ToString();
+                            valuesForUnion[2] = (Convert.ToInt32(valuesForUnion[2]) + Convert.ToInt32(values[53])).ToString();
+                            valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
+                            valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
+                            valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
+                            valuesForUnion[6] = (Convert.ToInt32(valuesForUnion[6]) + Convert.ToInt32(values[91])).ToString();
+
 
                         } 
                         else if (count == countForUnion + 2)
-                        {
-
-                            valuesForUnion[51] = (Convert.ToInt32(valuesForUnion[51]) + Convert.ToInt32(row[51].ToString())).ToString();
-                            valuesForUnion[53] = (Convert.ToInt32(valuesForUnion[53]) + Convert.ToInt32(row[53].ToString())).ToString();
-                            valuesForUnion[61] = (Convert.ToInt32(valuesForUnion[61]) + Convert.ToInt32(row[61].ToString())).ToString();
-                            valuesForUnion[62] = (Convert.ToDecimal(valuesForUnion[62]) + Convert.ToDecimal(row[62].ToString())).ToString();
-                            valuesForUnion[66] = (Convert.ToInt32(valuesForUnion[66]) + Convert.ToInt32(row[66].ToString())).ToString();
-                            valuesForUnion[91] = (Convert.ToInt32(valuesForUnion[91]) + Convert.ToInt32(row[91].ToString())).ToString(); 
+                        {                            
                             //对联程航班，各航段中的航线性质取国际>地区>国内，比如同时有地区和国内则为地区
-                            valuesForUnion[20] = FilterLineTypes(valuesForUnion[20] + "," + row[20].ToString());
+                            valuesForUnion[0] = FilterLineTypes(valuesForUnion[0] + "," + row[20].ToString());
 
-                            values[20] = valuesForUnion[20];
-                            values[51] = valuesForUnion[51];
-                            values[53] = valuesForUnion[53];
-                            values[61] = valuesForUnion[61];
-                            values[66] = valuesForUnion[66];
-                            values[91] = valuesForUnion[91];
+                            valuesForUnion[1] = (Convert.ToInt32(valuesForUnion[1]) + Convert.ToInt32(values[51])).ToString();
+                            valuesForUnion[2] = (Convert.ToInt32(valuesForUnion[2]) + Convert.ToInt32(values[53])).ToString();
+                            valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
+                            valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
+                            valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
+                            valuesForUnion[6] = (Convert.ToInt32(valuesForUnion[6]) + Convert.ToInt32(values[91])).ToString(); 
+
+
+                            values[20] = valuesForUnion[0];
+                            values[51] = valuesForUnion[1];
+                            values[53] = valuesForUnion[2];
+                            values[61] = valuesForUnion[3];
+                            values[62] = valuesForUnion[4];
+                            values[66] = valuesForUnion[5];
+                            values[91] = valuesForUnion[6];
 
                             commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
 
                             countForUnion = 0;//重新计数，用于每次只选择联程的3条数据
-                            valuesForUnion = new String[columnNum];
+                            valuesForUnion = new String[7];
 
                         }
                     }

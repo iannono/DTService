@@ -98,3 +98,4 @@ D:\Coding\DTService\DTService\bin\zh-Hans\System.Web.WebPages.Deployment.resourc
 D:\Coding\DTService\DTService\bin\zh-Hans\System.Web.WebPages.Razor.resources.dll
 D:\Coding\DTService\DTService\obj\Debug\DTService.dll
 D:\Coding\DTService\DTService\obj\Debug\DTService.pdb
+D:\100 Project\DTService\DTService\obj\Debug\DTService.csprojResolveAssemblyReference.cache
