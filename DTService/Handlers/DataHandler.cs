@@ -317,7 +317,7 @@ namespace DTService.Handlers
                     var values = GenerateValuesFromExcelRowNoHeader(row);
                     commandText.Append(GenerateInsertStr(TableName.fltincome, values) + "\n");
 
-                    if (count%5000 == 0)
+                    if (count%1000 == 0)
                     { 
                         cmd.CommandText = commandText.ToString();
                         cmd.ExecuteNonQuery();
@@ -327,7 +327,7 @@ namespace DTService.Handlers
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
                     //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等才需要录入到Sfincome;
-                    if (!FilterLine(row[8].ToString(), row[16].ToString()))
+                    if (!FilterLine(row[8].ToString(), row[16].ToString(), row[36].ToString()))
                       continue;
                     //如果数据中的航线类别为“联程”,则在转换之前需要先进行合并操作
                     if (values[10].ToString() == "联程")
@@ -352,7 +352,7 @@ namespace DTService.Handlers
                             valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
                             valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
                             valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
-                            valuesForUnion[6] = Math.Round((Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])), MidpointRounding.AwayFromZero).ToString();
+                            valuesForUnion[6] = (Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])).ToString();
 
 
                         } 
@@ -366,7 +366,7 @@ namespace DTService.Handlers
                             valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
                             valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
                             valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
-                            valuesForUnion[6] = Math.Round((Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])), MidpointRounding.AwayFromZero).ToString();
+                            valuesForUnion[6] = (Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])).ToString();
 
 
                             values[20] = valuesForUnion[0];
@@ -608,7 +608,7 @@ namespace DTService.Handlers
             { 
                 count++;
 
-                if (count > 10 && count < 92)
+                if (count > 10)
                 {
                     valueStr += "'" + value + "',";
                     continue;
@@ -644,11 +644,6 @@ namespace DTService.Handlers
                 if(count == 10)
                 {
                     valueStr += "'" + value + "','" + GenerateCarriernameunionFromCarriername(value) + "',";
-                    continue;
-                }
-                if (count == 92)
-                {
-                    valueStr += "" + Math.Round(Convert.ToDecimal(value), MidpointRounding.AwayFromZero) + ",";
                     continue;
                 }
 
@@ -723,9 +718,9 @@ namespace DTService.Handlers
             return valueStr;
         }
 
-        private bool FilterLine(string carrier, string line)
+        private bool FilterLine(string carrier, string line, string shareFlag)
         {
-            if (carrier == "CZ" && (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0))
+            if (carrier == "CZ" && (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0) && shareFlag == "0")
                 return true;
             return false;
         }
