@@ -326,8 +326,8 @@ namespace DTService.Handlers
 
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
-                    //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等才需要录入到Sfincome;
-                    if (!FilterLine(row[8].ToString(), row[16].ToString(), row[36].ToString()))
+                    //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）才需要录入到Sfincome;
+                    if (!FilterLine(row[8].ToString(), row[16].ToString(), row[36].ToString(), row[39].ToString()))
                       continue;
                     //如果数据中的航线类别为“联程”,则在转换之前需要先进行合并操作
                     if (values[10].ToString() == "联程")
@@ -718,9 +718,9 @@ namespace DTService.Handlers
             return valueStr;
         }
 
-        private bool FilterLine(string carrier, string line, string shareFlag)
+        private bool FilterLine(string carrier, string line, string shareFlag, string company)
         {
-            if (carrier == "CZ" && (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0) && shareFlag == "0")
+            if (carrier == "CZ" && (line.IndexOf("WUH") >= 0 || line.IndexOf("YIH") >= 0 || line.IndexOf("ENH") >= 0 || line.IndexOf("XFN") >= 0) && !(shareFlag == "1" && company == ""))
                 return true;
             return false;
         }
