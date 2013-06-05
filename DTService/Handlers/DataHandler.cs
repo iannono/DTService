@@ -328,67 +328,10 @@ namespace DTService.Handlers
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
                     //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）才需要录入到Sfincome;
                     if (!FilterLine(row[8].ToString(), row[16].ToString(), row[36].ToString(), row[39].ToString()))
-                      continue;
-                    //如果数据中的航线类别为“联程”,则在转换之前需要先进行合并操作
-                    if (values[10].ToString() == "联程")
-                    {
-                        if (countForUnion == 0)
-                            countForUnion = count;
+                      continue; 
 
-                        //联程航线都是以3条为单位
-                        //当每一组联程航线到达第三条数据的时候，就需要生成插入语句
+                    commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
 
-                        //---TODO---
-                        //可以对临时联程数组做优化，只需要生成保存需要合并的字段数量的数组
-                        //即：string[] valuesForUnion = new String[7];
-
-                        if (count < countForUnion + 2)
-                        {                            
-                            //对联程航班，各航段中的航线性质取国际>地区>国内，比如同时有地区和国内则为地区
-                            valuesForUnion[0] = FilterLineTypes(valuesForUnion[0] + "," + values[20].ToString());
-
-                            valuesForUnion[1] = (Convert.ToInt32(valuesForUnion[1]) + Convert.ToInt32(values[51])).ToString();
-                            valuesForUnion[2] = (Convert.ToInt32(valuesForUnion[2]) + Convert.ToInt32(values[53])).ToString();
-                            valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
-                            valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
-                            valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
-                            valuesForUnion[6] = (Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])).ToString();
-
-
-                        } 
-                        else if (count == countForUnion + 2)
-                        {                            
-                            //对联程航班，各航段中的航线性质取国际>地区>国内，比如同时有地区和国内则为地区
-                            valuesForUnion[0] = FilterLineTypes(valuesForUnion[0] + "," + row[20].ToString());
-
-                            valuesForUnion[1] = (Convert.ToInt32(valuesForUnion[1]) + Convert.ToInt32(values[51])).ToString();
-                            valuesForUnion[2] = (Convert.ToInt32(valuesForUnion[2]) + Convert.ToInt32(values[53])).ToString();
-                            valuesForUnion[3] = (Convert.ToInt32(valuesForUnion[3]) + Convert.ToInt32(values[61])).ToString();
-                            valuesForUnion[4] = (Convert.ToDecimal(valuesForUnion[4]) + Convert.ToDecimal(values[62])).ToString();
-                            valuesForUnion[5] = (Convert.ToInt32(valuesForUnion[5]) + Convert.ToInt32(values[66])).ToString();
-                            valuesForUnion[6] = (Convert.ToDecimal(valuesForUnion[6]) + Convert.ToDecimal(values[91])).ToString();
-
-
-                            values[20] = valuesForUnion[0];
-                            values[51] = valuesForUnion[1];
-                            values[53] = valuesForUnion[2];
-                            values[61] = valuesForUnion[3];
-                            values[62] = valuesForUnion[4];
-                            values[66] = valuesForUnion[5];
-                            values[91] = valuesForUnion[6];
-
-                            commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
-
-                            countForUnion = 0;//重新计数，用于每次只选择联程的3条数据
-                            valuesForUnion = new String[7];
-
-                        }
-                    }
-                    else
-                    {
-                        //非联程数据，直接转换
-                        commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
-                    }
                     //-------sfincome结束--------------//
                 }
 
@@ -695,21 +638,27 @@ namespace DTService.Handlers
         private string InsertWithSfIncome(string[] values, string valueStr)
         {
 
-            valueStr += "'" + values[0] + "'," + //航班日期fltdate：对应飞行日期fltdate
+            valueStr += "'" + values[10] + "'," + //航班分类flttype：对应航班分类flttype
+                        "'" + values[0] + "'," + //航班日期fltdate：对应飞行日期fltdate
                         "'" + values[39] + "'," + //执行单位company：对应执行单位company
                         "'" + values[11] + "'," + //航班号fltno：对应航班号fltno
                         "'" + values[34] + "'," + //起飞时间flttime：对应起飞时间flttime
-                        //航线性质line，需要根据fltincome中的加班标志和包机标志动态生成,35:包机标志、37：加班标志
-                        "'" + GetLineValueFromCharterFlagAndOvertimeFlag(values[35], values[37]) + "'," +
+                        "'" + values[12] + "'," + //航段segment：对应航段segment
+                        "'" + values[13] + "'," + //航段片区segmentarea：对应航段片区segmentarea
+                        "'" + values[14] + "'," + //航段性质segmenttype：对应航段性质segmenttype
+                        "'" + values[15] + "'," + //航段中文segmentname：对应航段中文segmentname
                         "'" + values[20] + "'," + //航线分类linetype：对应航线性质linetype
                         "'" + values[21] + "'," + //航线中文linename：对应航线中文linename
                         "'" + values[16] + "'," + //航线三字码linecode:对应航线line
-                        "'" + values[33] + "'," + //机型fltmodel：对应机型pmmodel
-                        "'" + 1 + "'," + //freq班次暂时写1
+                        "'" + values[35] + "'," + //包机标志charterflag：对应包机标志charterflag
+                        "'" + values[36] + "'," + //共享标志shareflag：对应共享标志shareflag
+                        "'" + values[37] + "'," + //加班标志overtimeflag：对应加班标志overtimeflag
+                        "'" + values[38] + "'," + //补贴标记moneyflag：对应补贴标记moneyflag
+                        "'" + values[33] + "'," + //机型pmmodel：对应机型pmmodel
+                        "'" + values[40] + "'," + //班次航班fltnum：对应班次航班fltnum
                         "'" + values[51] + "'," + //旅客人数passenger：对应登机数快报boarding 联程各航段求和
                         "'" + values[53] + "'," + //客公里kegongli：对应客公里快报kegongli 联程各航段求和
                         "'" + values[66] + "'," + //座公里zuogongli：对应座公里航节zuogonglileg 联程各航段求和
-                        "'" + 0 + "'," + //flyhour飞行小时，需要在另外一张表中取，暂时为0 
                         "'" + values[62] + "'," + //客行收入pincome：对应收入快报income 联程各航段求和
                         "'" + values[91] + "'," + //燃油附加费收入oil：对应燃油附加费oil 联程各航段求和
                         "'" + (Convert.ToDecimal(values[62]) + Convert.ToDecimal(values[91])) + "'," + //客行收入合计（含燃油）pincomeoil：对应客行收入（sfincome） + 燃油附加费收入（sfincome）入
