@@ -662,7 +662,8 @@ namespace DTService.Handlers
                         "'" + values[62] + "'," + //客行收入pincome：对应收入快报income 联程各航段求和
                         "'" + values[91] + "'," + //燃油附加费收入oil：对应燃油附加费oil 联程各航段求和
                         "'" + (Convert.ToDecimal(values[62]) + Convert.ToDecimal(values[91])) + "'," + //客行收入合计（含燃油）pincomeoil：对应客行收入（sfincome） + 燃油附加费收入（sfincome）入
-                        "'" + values[61] + "',";  //全票收入ticketincome：对应全票价收入Y舱全票价fullpricey 联程各航段求和
+                        "'" + values[61] + "'," +   //全票收入ticketincome：对应全票价收入Y舱全票价fullpricey 联程各航段求和
+                        "'" + values[90] + "',"; //航空保险费insurance :对应航空保险费 insurance
 
             return valueStr;
         }
