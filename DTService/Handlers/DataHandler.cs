@@ -301,24 +301,24 @@ namespace DTService.Handlers
             StringBuilder commandTextWithSfincome = new StringBuilder();
             try
             {
-                var excel = new ExcelQueryFactory(filePath);
+                StreamReader sr = new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read),
+                                                                  System.Text.Encoding.Default);
 
-                var rows = from v in excel.WorksheetNoHeader()
-                           select v;
+                string strTemp = sr.ReadLine();
 
-                var columnNum = rows.First().ToArray().Length;
-                string[] valuesForUnion = new String[7];
-                var countForUnion = 0;
+                string[] splits = null;
 
                 var count = 0;
-                foreach (var row in rows)
-                { 
-                    count++;
-                    var values = GenerateValuesFromExcelRowNoHeader(row);
-                    commandText.Append(GenerateInsertStr(TableName.fltincome, values) + "\n");
 
-                    if (count%1000 == 0)
-                    { 
+                while (strTemp != null)
+                {
+                    count++;
+                    splits = strTemp.Split(',');
+
+                    commandText.Append(GenerateInsertStr(TableName.fltincome, splits) + "\n");
+
+                    if (count % 1000 == 0)
+                    {
                         cmd.CommandText = commandText.ToString();
                         cmd.ExecuteNonQuery();
                         commandText.Clear();
@@ -327,19 +327,22 @@ namespace DTService.Handlers
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
                     //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）才需要录入到Sfincome;
-                    if (!FilterLine(row[8].ToString(), row[16].ToString(), row[36].ToString(), row[39].ToString()))
-                      continue; 
+                    if (FilterLine(splits[8].ToString(), splits[16].ToString(), splits[36].ToString(), splits[39].ToString()))
+                        commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, splits) + "\n");
 
-                    commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, values) + "\n");
-
-                    //-------sfincome结束--------------//
+                    strTemp = sr.ReadLine();
                 }
+
 
                 cmd.CommandText = commandText.ToString();
                 cmd.ExecuteNonQuery();
 
-                cmd.CommandText = commandTextWithSfincome.ToString();
-                cmd.ExecuteNonQuery();
+                if (commandTextWithSfincome.ToString() != "")
+                {
+                    cmd.CommandText = commandTextWithSfincome.ToString();
+                    cmd.ExecuteNonQuery();
+                }
+                sr.Close();
             }
             catch (Exception e)
             {
@@ -551,11 +554,6 @@ namespace DTService.Handlers
             { 
                 count++;
 
-                if (count > 10)
-                {
-                    valueStr += "'" + value + "',";
-                    continue;
-                }
                 if (count == 2)
                 {
                     //这个字段根据文件类型的不同，读取的内容会有差异（csv：2013-05；xlsx：2013/05/01 00:00:00）
@@ -587,6 +585,33 @@ namespace DTService.Handlers
                 if(count == 10)
                 {
                     valueStr += "'" + value + "','" + GenerateCarriernameunionFromCarriername(value) + "',";
+                    continue;
+                }
+                if (count == 51 || count == 56 || count == 57 || count == 58 || count == 59 || count == 65 || count == 69 || count == 70)
+                {
+                    if (value.Length >= 11)
+                    {
+                        valueStr += "'" + value.Substring(0, 11) + "',";
+                    }
+                    else
+                    {
+                        valueStr += "'" + value + "',";
+                    }
+
+                    continue; 
+                }
+
+                if (count == 63 || count == 64 || count == 74 || count == 79 || count == 84 || count == 89 || count == 91)
+                {
+
+                    if (value.Length >= 11)
+                    {
+                        valueStr += "'" + value.Substring(0, 10) + "',";
+                    }
+                    else
+                    {
+                        valueStr += "'" + value + "',";
+                    }
                     continue;
                 }
 
@@ -656,6 +681,8 @@ namespace DTService.Handlers
                         "'" + values[38] + "'," + //补贴标记moneyflag：对应补贴标记moneyflag
                         "'" + values[33] + "'," + //机型pmmodel：对应机型pmmodel
                         "'" + values[40] + "'," + //班次航班fltnum：对应班次航班fltnum
+                        "'" + values[41] + "'," + //班次num：对应班次num
+                        "'" + values[42] + "'," + //班次航节legnum：对应班次航节legnum
                         "'" + values[51] + "'," + //旅客人数passenger：对应登机数快报boarding 联程各航段求和
                         "'" + values[53] + "'," + //客公里kegongli：对应客公里快报kegongli 联程各航段求和
                         "'" + values[66] + "'," + //座公里zuogongli：对应座公里航节zuogonglileg 联程各航段求和
