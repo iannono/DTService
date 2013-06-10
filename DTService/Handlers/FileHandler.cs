@@ -94,7 +94,7 @@ namespace DTService.Handlers
                 case TableName.cincome:
                     return filePath + @"\常客销售收入\";
                 case TableName.cargoincome:
-                    return filePath + @"\货邮收入\";
+                    return filePath + @"\执行收入查询报表\";
                 case TableName.et:
                     return filePath + @"\et\";
                 case TableName.flightplan:

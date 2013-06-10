@@ -52,7 +52,7 @@ namespace DTService.Handlers
                     SqlCommand cmd = new SqlCommand();
                     cmd.Connection = conn;
                     cmd.Transaction = trans;
-                    var ImportMonth = FilterDateFromFilePath(filePath);
+                    var ImportMonth = FilterDateFromFilePath(filePath, "month");
                     try
                     {
                         if (table == TableName.pincome)
@@ -98,6 +98,10 @@ namespace DTService.Handlers
                             //还需要从表中选择部分数据，插入其他的表中
                             InsertIntoFltIncome(cmd, filePath); 
                         }
+                        else if (table == TableName.cargoincome)
+                        {
+                            InsertIntoCargoIncome(cmd, filePath);
+                        }
                         else
                         {
                             InsertIntoTable(table, cmd, filePath);
@@ -125,13 +129,20 @@ namespace DTService.Handlers
         //针对需要更新数据的表，需要了解当前的文件是针对几月的数据
         //这样才能从数据库中筛选出正确的数据，并进行替换
         //所以需要文件的名称的头6个字母标明当前的数据所属的月份
-        private string FilterDateFromFilePath(string filePath)
+        private string FilterDateFromFilePath(string filePath, string type)
         {
             var ImportDate = "";
             if (File.Exists(filePath))
             {
                 var fileInfo = new FileInfo(filePath);
-                ImportDate = fileInfo.Name.Substring(0, 6); 
+                if (type == "month")
+                {
+                    ImportDate = fileInfo.Name.Substring(0, 6);
+                }
+                else if (type == "day")
+                {
+                    ImportDate = fileInfo.Name.Substring(0, 8);
+                }
             }
             return ImportDate; 
         }
@@ -178,7 +189,7 @@ namespace DTService.Handlers
                     { 
                         //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
                         //目前的检查只是针对第一条进行判断
-                        var importMonth = FilterDateFromFilePath(filePath);
+                        var importMonth = FilterDateFromFilePath(filePath, "month");
                         if (!CheckImportDataWithMonth(table, importMonth, splits))
                             throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
 
@@ -234,7 +245,7 @@ namespace DTService.Handlers
                     if (count == 0 && (table == TableName.pincome || table == TableName.hubincome))
                     {
                         //针对pincome,hubincome等表进行数据确认，确定导入的数据和文件名中包含的月份是一样的
-                        var importMonth = FilterDateFromFilePath(filePath);
+                        var importMonth = FilterDateFromFilePath(filePath, "month");
                         if (!CheckImportDataWithMonth(table, importMonth, GenerateValuesFromExcelRow(row)))
                             throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
                     }
@@ -350,6 +361,45 @@ namespace DTService.Handlers
             }
         }
 
+        //因为CargoIncome需要根据文件名来读取录入的日期，所以单独使用一个方法
+        private void InsertIntoCargoIncome(SqlCommand cmd, string filePath)
+        { 
+            ArrayList dateAry = new ArrayList();
+            StringBuilder commandText = new StringBuilder();
+            try
+            {
+                var excel = new ExcelQueryFactory(filePath);
+
+                var rows = from v in excel.WorksheetNoHeader()
+                           select v; 
+
+                var dateTime = FilterDateFromFilePath(filePath, "day");
+                var count = 0;
+                foreach (var row in rows)
+                {
+                    count++;
+                    if (count == 1 || count == 2 || count == rows.Count())//跳过第一行的日期和第二行的标题以及最后一行的合计
+                        continue;
+
+                    commandText.Append(InsertWithCargoIncome(TableName.cargoincome,GenerateValuesFromExcelRowNoHeader(row), dateTime) + "\n");
+
+                    if (count == 5000)
+                    {
+                        cmd.CommandText = commandText.ToString();
+                        cmd.ExecuteNonQuery();
+                        count = 0;
+                        commandText.Clear();
+                    }
+                }
+                cmd.CommandText = commandText.ToString();
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+            
+        }
 
         //将excel表中的每一行数据转换成对应的字符串数组
         private string[] GenerateValuesFromExcelRow(LinqToExcel.Row row)
@@ -724,6 +774,28 @@ namespace DTService.Handlers
                     return "加班";
             }
             return charterFlag + overtimeFlag;
+        }
+
+
+        //cargoincome
+        private string InsertWithCargoIncome(TableName table, string[] values, string dateTime)
+        {
+            var commandText = "insert into " + Enum.GetName(typeof(TableName), table) + " (" + FilterEscape(ConfigurationManager.AppSettings[Enum.GetName(typeof(TableName), table)].ToString()) + ") ";
+            var valueStr = " values(";
+            var count = 0;
+
+            foreach (string value in values)
+            {
+                count++;
+                if (count == 1) //第一列的执行单位不需要
+                    continue;
+
+                valueStr += "'" + value + "',";
+            }
+
+            valueStr += "'" + dateTime + "');";//收入导出的时间
+            commandText += valueStr;
+            return commandText;
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法
