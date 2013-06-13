@@ -59,7 +59,7 @@ namespace DTService.Handlers
             }
             else
             {
-                results += "导入目录不存在，请检查是否存在" + Enum.GetName(typeof(TableName), table) + "目录!";
+                results += "导入目录不存在，请检查是否存在" + Enum.GetName(typeof(TableName), table) + "表所对应的目录!";
             }
             return results;
         }
@@ -94,7 +94,7 @@ namespace DTService.Handlers
                 case TableName.cincome:
                     return filePath + @"\常客销售收入\";
                 case TableName.cargoincome:
-                    return filePath + @"\执行收入查询报表\";
+                    return filePath + @"\货邮收入\";
                 case TableName.et:
                     return filePath + @"\et\";
                 case TableName.flightplan:

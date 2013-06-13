@@ -370,18 +370,23 @@ namespace DTService.Handlers
             {
                 var excel = new ExcelQueryFactory(filePath);
 
-                var rows = from v in excel.WorksheetNoHeader()
+                var rows = from v in excel.Worksheet("sheet0")
                            select v; 
 
                 var dateTime = FilterDateFromFilePath(filePath, "day");
                 var count = 0;
+
+                //导入前需先删除同一天的数据
+                cmd.CommandText = "delete from cargoincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                cmd.ExecuteNonQuery();
+
                 foreach (var row in rows)
                 {
                     count++;
-                    if (count == 1 || count == 2 || count == rows.Count())//跳过第一行的日期和第二行的标题以及最后一行的合计
+                    if (count == 1 || count == rows.Count())//跳过第一行的日期以及最后一行的合计
                         continue;
 
-                    commandText.Append(InsertWithCargoIncome(TableName.cargoincome,GenerateValuesFromExcelRowNoHeader(row), dateTime) + "\n");
+                    commandText.Append(InsertWithCargoIncome(TableName.cargoincome,GenerateValuesFromExcelRow(row), dateTime) + "\n");
 
                     if (count == 5000)
                     {
