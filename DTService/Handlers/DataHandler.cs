@@ -146,7 +146,7 @@ namespace DTService.Handlers
                 }
                 else if (type == "day_from_end")
                 {
-                    ImportDate = fileName.Substring(fileName.LastIndexOf('.') - 6, 6);
+                    ImportDate = fileName.Substring(fileName.LastIndexOf('.') - 8, 8);
                 }
             }
             return ImportDate; 
@@ -326,8 +326,8 @@ namespace DTService.Handlers
 
 
                 //导入数居前，需要先删除该日期下的已有的数据
-                //var dateTime = FilterDateFromFilePath(filePath, "day_from_end"); 
-                //cmd.CommandText = "delete from fltincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                var dateTime = FilterDateFromFilePath(filePath, "day_from_end"); 
+                cmd.CommandText = "delete from fltincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
                 cmd.ExecuteNonQuery();
 
                 while (strTemp != null)
@@ -360,8 +360,8 @@ namespace DTService.Handlers
                 if (commandTextWithSfincome.ToString() != "")
                 {
                     //导入数据前，需要先删除该日期下的已有的数据
-                    //cmd.CommandText = "delete from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
-                    //cmd.ExecuteNonQuery();
+                    cmd.CommandText = "delete from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                    cmd.ExecuteNonQuery();
 
                     cmd.CommandText = commandTextWithSfincome.ToString();
                     cmd.ExecuteNonQuery();
