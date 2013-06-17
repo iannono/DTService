@@ -132,16 +132,21 @@ namespace DTService.Handlers
         private string FilterDateFromFilePath(string filePath, string type)
         {
             var ImportDate = "";
+            var fileInfo = new FileInfo(filePath);
+            var fileName = fileInfo.Name;
             if (File.Exists(filePath))
             {
-                var fileInfo = new FileInfo(filePath);
                 if (type == "month")
                 {
-                    ImportDate = fileInfo.Name.Substring(0, 6);
+                    ImportDate = fileName.Substring(0, 6);
                 }
                 else if (type == "day")
                 {
-                    ImportDate = fileInfo.Name.Substring(0, 8);
+                    ImportDate = fileName.Substring(0, 8);
+                }
+                else if (type == "day_from_end")
+                {
+                    ImportDate = fileName.Substring(fileName.LastIndexOf('.') - 6, 6);
                 }
             }
             return ImportDate; 
@@ -315,11 +320,15 @@ namespace DTService.Handlers
                 StreamReader sr = new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read),
                                                                   System.Text.Encoding.Default);
 
-                string strTemp = sr.ReadLine();
-
-                string[] splits = null;
-
+                string strTemp = sr.ReadLine(); 
+                string[] splits = null; 
                 var count = 0;
+
+
+                //导入数居前，需要先删除该日期下的已有的数据
+                //var dateTime = FilterDateFromFilePath(filePath, "day_from_end"); 
+                //cmd.CommandText = "delete from fltincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                cmd.ExecuteNonQuery();
 
                 while (strTemp != null)
                 {
@@ -350,6 +359,10 @@ namespace DTService.Handlers
 
                 if (commandTextWithSfincome.ToString() != "")
                 {
+                    //导入数据前，需要先删除该日期下的已有的数据
+                    //cmd.CommandText = "delete from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                    //cmd.ExecuteNonQuery();
+
                     cmd.CommandText = commandTextWithSfincome.ToString();
                     cmd.ExecuteNonQuery();
                 }
@@ -794,10 +807,13 @@ namespace DTService.Handlers
                 count++;
                 if (count == 1) //第一列的执行单位不需要
                     continue;
+                if (count == 10) //由于存在最后一列数据无法读出的情况，在这里舍弃最后一列，而采取手动计算合计的方式；
+                    continue;
 
                 valueStr += "'" + value + "',";
             }
 
+            valueStr += "'" + (Convert.ToDecimal(values[7]) + Convert.ToDecimal(values[8])) + "',";
             valueStr += "'" + dateTime + "');";//收入导出的时间
             commandText += valueStr;
             return commandText;
