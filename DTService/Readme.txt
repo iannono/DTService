@@ -29,4 +29,8 @@
 
 *cargoincome的文件名需要采用类似'20130608'的形式开头
 
+**webservice**
+
+*系统提供了基于HTTP的API，通过向http://localhost/api/dataservice/tablename形式的地址发起get请求，来执行对应的导入方法，返回执行结果
+
 

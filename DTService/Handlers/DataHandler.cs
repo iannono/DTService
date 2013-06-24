@@ -86,7 +86,7 @@ namespace DTService.Handlers
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "insert et select fltdate, sale, localsale, nationalsale, hvpsale, fcsale, wysale, customsale, groupsale, hubsale, directsale," +
-                                              "localhub, nationalhub from et_temp";
+                                              "localhub, nationalhub, company from et_temp";
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "delete from et_temp";
@@ -462,10 +462,10 @@ namespace DTService.Handlers
                     valueStr = InsertWithCIncome(values, valueStr);
                     break;
                 case TableName.et:
-                    valueStr = InsertWithCommon(values, valueStr);
+                    valueStr = InsertWithCommon(values, valueStr, table);
                     break;
                 case TableName.et_temp:
-                    valueStr = InsertWithCommon(values, valueStr);
+                    valueStr = InsertWithCommon(values, valueStr, table);
                     break;
                 case TableName.flightplan:
                     valueStr = InsertWithFlightPlan(values, valueStr);
@@ -480,7 +480,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithHubIncome(values, valueStr);
                     break;
                 case TableName.lineincome:
-                    valueStr = InsertWithCommon(values, valueStr);
+                    valueStr = InsertWithCommon(values, valueStr, table);
                     break;
                 case TableName.fltincome:
                     valueStr = InsertWithFltIncome(values, valueStr);
@@ -569,6 +569,7 @@ namespace DTService.Handlers
                 }
                 count++;
             }
+            valueStr += AddCompany(TableName.cincome) + ",";
             return valueStr;
         }
 
@@ -611,6 +612,7 @@ namespace DTService.Handlers
                 }
                 count++;
             }
+            valueStr += AddCompany(TableName.flightplan) + ",";
             return valueStr;
         }
 
@@ -814,19 +816,34 @@ namespace DTService.Handlers
             }
 
             valueStr += "'" + (Convert.ToDecimal(values[7]) + Convert.ToDecimal(values[8])) + "',";
-            valueStr += "'" + dateTime + "');";//收入导出的时间
+            valueStr += "'" + dateTime + "',";//收入导出的时间
+            valueStr += AddCompany(table) + ");";
             commandText += valueStr;
             return commandText;
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法
-        private string InsertWithCommon(string[] values, string valueStr)
+        private string InsertWithCommon(string[] values, string valueStr, TableName table)
         {
             foreach (string value in values)
             {
                 valueStr += "'" + value.Replace(",", "").Replace("'", "''") + "',";
             }
+
+            if (AddCompany(table) != "")
+            {
+                valueStr += AddCompany(table) + ",";
+            }
             return valueStr;
+        }
+
+        private string AddCompany(TableName table)
+        {
+            if (table == TableName.et || table == TableName.et_temp || table == TableName.cargoincome || table == TableName.flightplan || table == TableName.cincome)
+            {
+                return "'WUH'";
+            }
+            return "";
         }
 
 
