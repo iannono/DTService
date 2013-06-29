@@ -151,6 +151,18 @@ namespace DTService.Handlers
             }
             return ImportDate; 
         }
+        private string FilterCorporationFromFilePath(string filePath)
+        {
+            var corporation = "";
+
+            var fileInfo = new FileInfo(filePath);
+            var fileName = fileInfo.Name;
+            if (File.Exists(filePath))
+            {
+                corporation = fileName.Substring(0, 3);
+            }
+            return corporation;
+        }
 
         private void InsertIntoTable(TableName table, SqlCommand cmd, string filePath)
         {
@@ -326,8 +338,9 @@ namespace DTService.Handlers
 
 
                 //导入数居前，需要先删除该日期下的已有的数据
-                var dateTime = FilterDateFromFilePath(filePath, "day_from_end"); 
-                cmd.CommandText = "delete from fltincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                var dateTime = FilterDateFromFilePath(filePath, "day_from_end");
+                var corporation = FilterCorporationFromFilePath(filePath);
+                cmd.CommandText = "delete from fltincome where convert(varchar(12), fltdate, 112)='" + dateTime + "' and corporation = '" + corporation + "'";
                 cmd.ExecuteNonQuery();
 
                 while (strTemp != null)
@@ -335,7 +348,7 @@ namespace DTService.Handlers
                     count++;
                     splits = strTemp.Split(',');
 
-                    commandText.Append(GenerateInsertStr(TableName.fltincome, splits) + "\n");
+                    commandText.Append(GenerateInsertStr(TableName.fltincome, splits, filePath) + "\n");
 
                     if (count % 1000 == 0)
                     {
@@ -347,7 +360,7 @@ namespace DTService.Handlers
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
                     //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）才需要录入到Sfincome;
-                    if (FilterLine(splits[8].ToString(), splits[16].ToString(), splits[36].ToString(), splits[39].ToString()))
+                    if (FilterLine(splits[8].ToString(), splits[16].ToString(), splits[36].ToString(), splits[39].ToString()) && corporation == "WUH")
                         commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, splits) + "\n");
 
                     strTemp = sr.ReadLine();
@@ -446,7 +459,7 @@ namespace DTService.Handlers
 
         //针对不同的数据表需要转换不同的数据格式以及更新不同的字段
         //生成每条插入数据的sql语句
-        private string GenerateInsertStr(TableName table, string[] values)
+        private string GenerateInsertStr(TableName table, string[] values, string filePath = "")
         {
             var commandText = "insert into " + Enum.GetName(typeof(TableName), table) + " (" + FilterEscape(ConfigurationManager.AppSettings[Enum.GetName(typeof(TableName), table)].ToString()) + ") ";
             var valueStr = " values(";
@@ -483,7 +496,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithCommon(values, valueStr, table);
                     break;
                 case TableName.fltincome:
-                    valueStr = InsertWithFltIncome(values, valueStr);
+                    valueStr = InsertWithFltIncome(values, valueStr, filePath);
                     break;
                 case TableName.sfincome:
                     valueStr = InsertWithSfIncome(values, valueStr);
@@ -617,7 +630,7 @@ namespace DTService.Handlers
         }
 
         //数据表中没有‘月日’这个字段(字段序列3)，但是原始数据里面有，所以需要在生成语句的时候删除
-        private string InsertWithFltIncome(string[] values, string valueStr)
+        private string InsertWithFltIncome(string[] values, string valueStr, string filePath)
         {
             var count = 0;
             foreach (string value in values)
@@ -684,10 +697,10 @@ namespace DTService.Handlers
                     }
                     continue;
                 }
-
                 valueStr += "'" + value + "',"; 
             }
 
+            valueStr += "'" + FilterCorporationFromFilePath(filePath) + "',";
             return valueStr; 
         }
 

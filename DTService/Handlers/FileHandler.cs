@@ -106,7 +106,7 @@ namespace DTService.Handlers
                 case TableName.lineincome:
                     return filePath + @"\BO航线座公里收入汇总\";
                 case TableName.fltincome:
-                    return ftpPath + @"\fltincome\";
+                    return ftpPath;
             }
             return filePath;
         }
