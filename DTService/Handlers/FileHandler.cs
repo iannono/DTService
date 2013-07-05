@@ -28,6 +28,9 @@ namespace DTService.Handlers
                 results += GenerateResults(filePaths.Length);
                 foreach (string filePath in filePaths)
                 {
+                    if (table == TableName.fltincome && !IsFltIncomeFile(filePath))
+                        continue;
+
                     if (File.Exists(filePath))
                     {
                         try
@@ -62,6 +65,13 @@ namespace DTService.Handlers
                 results += "导入目录不存在，请检查是否存在" + Enum.GetName(typeof(TableName), table) + "表所对应的目录!";
             }
             return results;
+        }
+
+        public bool IsFltIncomeFile(string filePath)
+        {
+            if (filePath.Contains("SEGMENT"))
+                return true;
+            return false;
         }
 
         public object GetTableTypeFromTableName(string tableName)
