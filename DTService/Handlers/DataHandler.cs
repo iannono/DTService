@@ -102,6 +102,13 @@ namespace DTService.Handlers
                         {
                             InsertIntoCargoIncome(cmd, filePath);
                         }
+                        else if (table == TableName.cincome)
+                        {
+                            cmd.CommandText = "delete from cincome where month='" + ImportMonth + "'";
+                            cmd.ExecuteNonQuery();
+
+                            InsertIntoTable(table, cmd, filePath); 
+                        }
                         else
                         {
                             InsertIntoTable(table, cmd, filePath);
