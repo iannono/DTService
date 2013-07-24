@@ -17,9 +17,10 @@ namespace DTService.Handlers
         private DataHandler dataHandler = new DataHandler();
         string _connStr = ConfigurationManager.ConnectionStrings["omsConnectionString"].ToString();
 
-        public string ImportFile(TableName table)
+        public string ImportFile(TableName table, string type)
         {
-            var dir = GetDirPath(table);
+            var dir = GetDirPath(table, type);
+
             var success = false;
             var results = "";
             if (Directory.Exists(dir))
@@ -35,7 +36,7 @@ namespace DTService.Handlers
                     {
                         try
                         {
-                            success = dataHandler.HandleData(table, filePath);
+                            success = dataHandler.HandleData(table, filePath, type);
                             if (success)
                             {
                                 results += "<p>" + Enum.GetName(typeof(TableName), table) + "(文件路径：" + filePath + "): <span class='label label-success'>成功！</span></p>";
@@ -93,10 +94,14 @@ namespace DTService.Handlers
             }
         }
 
-        private string GetDirPath(TableName table)
+
+        private string GetDirPath(TableName table, string type)
         {
-            string filePath = ConfigurationManager.AppSettings["FilePath"].ToString();
-            string ftpPath = ConfigurationManager.AppSettings["FtpPath"].ToString();
+
+            string filePath = ConfigurationManager.AppSettings[type.ToUpper() + "FilePath"].ToString();
+            string ftpPath = ConfigurationManager.AppSettings[type.ToUpper() + "FtpPath"].ToString();
+
+
             switch (table)
             {
                 case TableName.pincome:

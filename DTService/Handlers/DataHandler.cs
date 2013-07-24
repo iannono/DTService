@@ -41,7 +41,7 @@ namespace DTService.Handlers
     {
         string _connStr = ConfigurationManager.ConnectionStrings["omsConnectionString"].ToString();
 
-        public bool HandleData(TableName table, string filePath)
+        public bool HandleData(TableName table, string filePath, string type)
         {
             var success = true;
             using (SqlConnection conn = new SqlConnection(_connStr))

@@ -2,7 +2,7 @@ jQuery ->
   $("button").click -> 
     $.ajax(
       type: "GET",
-      url: "api/dataservice/" + $(this).data("table"),
+      url: "api/dataservice/" + $(this).data("table") + "?type=ALL",
       success: (data) =>
         $notice = $("<div id='notice' class='alert alert-info hide'>" +
                     "<a class='close' data-dismiss='alert' href='#'>&times;</a>" +

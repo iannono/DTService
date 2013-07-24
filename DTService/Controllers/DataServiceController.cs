@@ -20,11 +20,20 @@ namespace DTService.Controllers
         }
 
         // GET api/dataservice/pincome
-        public string Get(string table)
+        public string Get(string table, string type)
         {
+            string results = "";
             try
             {
-                string results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table));
+                if(type.ToUpper() == "ALL")
+                { 
+                    results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table), "SHE");
+                    results += fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table), "WUH");
+                }
+                else
+                {
+                    results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table), type);
+                }
                 return results;
             }
             catch (Exception e)
@@ -32,6 +41,7 @@ namespace DTService.Controllers
                 return e.Message;
             }
         }
+
 
         // POST api/dataservice
         public void Post([FromBody]string value)

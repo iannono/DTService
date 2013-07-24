@@ -36,7 +36,7 @@ namespace DTService.Tests.Controllers
             DataServiceController controller = new DataServiceController();
 
             // 操作
-            string result = controller.Get("pincome");
+            string result = controller.Get("pincome", "SHE");
 
             // 断言
             Assert.AreEqual("value", result);

@@ -5,7 +5,7 @@
 
       return $.ajax({
         type: "GET",
-        url: "api/dataservice/" + $(this).data("table"),
+        url: "api/dataservice/" + $(this).data("table") + "?type=ALL",
         success: function(data) {
           var $notice;
 
