@@ -1,0 +1,22 @@
+pincome最后一列增加company nvarchar(64) not null字段
+et最后一列增加company nvarchar(64) not null字段
+cincome最后一列增加corporation nvarchar(64) not null字段
+cargoincome最后一列增加company nvarchar(64) not null字段
+flightplan最后一列增加company nvarchar(64) not null字段
+
+
+上面5个根据文件的目录来写company或者corporation的值，有WUH和SHE，这个能不能在web.config里配？
+或者在web.config里写明哪个是SHE或者WUH。
+
+
+
+hubincome无增加字段，直接导入
+lineincome无增加字段，直接导入
+groupincome无增加字段，直接导入
+
+这三个不用修改，直接导入。
+
+
+另外，就是每次导入有做删除的，是需要根据公司这个字段的内容来删，不能直接按日期删了。
+
+关于webservice的api，能否在URL里做下区分，根据传过去的SHE或者WUH来导对应公司目录下的文件，而不是一次把两个目录下的都导了？
