@@ -53,21 +53,22 @@ namespace DTService.Handlers
                     cmd.Connection = conn;
                     cmd.Transaction = trans;
                     var ImportMonth = FilterDateFromFilePath(filePath, "month");
+                    type = type.ToUpper();
                     try
                     {
                         if (table == TableName.pincome)
                         { 
-                            cmd.CommandText = "delete from pincome where month='" + ImportMonth + "'";
+                            cmd.CommandText = "delete from pincome where month='" + ImportMonth + "' and company='" + type + "'";
                             cmd.ExecuteNonQuery();
 
-                            InsertIntoTable(table, cmd, filePath);
+                            InsertIntoTable(table, cmd, filePath, type);
                         }
                         else if (table == TableName.hubincome)
                         {
                             cmd.CommandText = "delete from hubincome where month='" + ImportMonth + "'";
                             cmd.ExecuteNonQuery();
 
-                            InsertIntoTable(table, cmd, filePath); 
+                            InsertIntoTable(table, cmd, filePath, type); 
                         }
                         else if (table == TableName.et)
                         { 
@@ -75,14 +76,14 @@ namespace DTService.Handlers
                             //对数据库进行更新，而不能直接删除原有的数据
                             //采用一个额外的数据来维护当前文件中所包含的天数
                             //最后根据数组来删除数据库中对应日期的数据，然后再插入新的数据
-                            ArrayList dateAry = InsertIntoEt(cmd, filePath);
+                            ArrayList dateAry = InsertIntoEt(cmd, filePath, type);
 
                             cmd.CommandText = "delete from et where convert(varchar(12), fltdate, 112) in (";
                             foreach (string date in dateAry)
                             {
                                 cmd.CommandText += "'" + Convert.ToDateTime(date).ToString("yyyyMMdd") + "',";
                             }
-                            cmd.CommandText = cmd.CommandText.Substring(0, cmd.CommandText.Length - 1) + ")";
+                            cmd.CommandText = cmd.CommandText.Substring(0, cmd.CommandText.Length - 1) + ")" + " and company='" + type + "'";
                             cmd.ExecuteNonQuery();
 
                             cmd.CommandText = "insert et select fltdate, sale, localsale, nationalsale, hvpsale, fcsale, wysale, customsale, groupsale, hubsale, directsale," +
@@ -100,18 +101,18 @@ namespace DTService.Handlers
                         }
                         else if (table == TableName.cargoincome)
                         {
-                            InsertIntoCargoIncome(cmd, filePath);
+                            InsertIntoCargoIncome(cmd, filePath, type);
                         }
                         else if (table == TableName.cincome)
                         {
-                            cmd.CommandText = "delete from cincome where month='" + ImportMonth + "'";
+                            cmd.CommandText = "delete from cincome where month='" + ImportMonth + "' and corporation='" + type + "'";
                             cmd.ExecuteNonQuery();
 
-                            InsertIntoTable(table, cmd, filePath); 
+                            InsertIntoTable(table, cmd, filePath, type); 
                         }
                         else
                         {
-                            InsertIntoTable(table, cmd, filePath);
+                            InsertIntoTable(table, cmd, filePath, type);
                         }
                     }
                     catch (Exception e)
@@ -171,7 +172,7 @@ namespace DTService.Handlers
             return corporation;
         }
 
-        private void InsertIntoTable(TableName table, SqlCommand cmd, string filePath)
+        private void InsertIntoTable(TableName table, SqlCommand cmd, string filePath, string type)
         {
 
             var start = filePath.LastIndexOf('.') + 1;
@@ -180,15 +181,15 @@ namespace DTService.Handlers
 
             if(fileType == "csv" || fileType == "xls" || fileType == "xlsx")
             {
-                InsertIntoTableWithExcel(table, cmd, filePath);
+                InsertIntoTableWithExcel(table, cmd, filePath, type);
             }
             else if(fileType == "txt")
             {
-                InsertIntoTableWithTxt(table, cmd, filePath);
+                InsertIntoTableWithTxt(table, cmd, filePath, type);
             }
         }
 
-        private void InsertIntoTableWithTxt(TableName table, SqlCommand cmd, string filePath)
+        private void InsertIntoTableWithTxt(TableName table, SqlCommand cmd, string filePath, string type)
         {
             StringBuilder commandText = new StringBuilder();
 
@@ -218,7 +219,7 @@ namespace DTService.Handlers
                             throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
 
                     }
-                    commandText.Append(GenerateInsertStr(table, splits) + "\n");
+                    commandText.Append(GenerateInsertStr(table, splits,"",type) + "\n");
                     if (count == 5000)
                     {
                         cmd.CommandText = commandText.ToString();
@@ -253,7 +254,7 @@ namespace DTService.Handlers
             return false;
         }
 
-        private void InsertIntoTableWithExcel(TableName table, SqlCommand cmd, string filePath)
+        private void InsertIntoTableWithExcel(TableName table, SqlCommand cmd, string filePath, string type)
         {
             StringBuilder commandText = new StringBuilder();
             try
@@ -273,7 +274,7 @@ namespace DTService.Handlers
                         if (!CheckImportDataWithMonth(table, importMonth, GenerateValuesFromExcelRow(row)))
                             throw new Exception("<p class='text-error'>文件" + filePath + "的名称与内容中数据的所属月份不一致，该文件的导入停止，请检查文件后，再进行导入</p>");
                     }
-                    commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow((LinqToExcel.Row)row)) + "\n");
+                    commandText.Append(GenerateInsertStr(table, GenerateValuesFromExcelRow((LinqToExcel.Row)row),"", type) + "\n");
                     if(count == 5000)
                     {
                         cmd.CommandText = commandText.ToString();
@@ -292,7 +293,7 @@ namespace DTService.Handlers
             }
         }
 
-        private ArrayList InsertIntoEt(SqlCommand cmd, string filePath)
+        private ArrayList InsertIntoEt(SqlCommand cmd, string filePath, string type)
         {
             ArrayList dateAry = new ArrayList();
             StringBuilder commandText = new StringBuilder();
@@ -311,7 +312,7 @@ namespace DTService.Handlers
                     {
                         dateAry.Add(row[0].ToString());
                     }
-                    commandText.Append(GenerateInsertStr(TableName.et_temp, GenerateValuesFromExcelRow(row)) + "\n");
+                    commandText.Append(GenerateInsertStr(TableName.et_temp, GenerateValuesFromExcelRow(row),"", type) + "\n");
                     if (count == 5000)
                     {
                         cmd.CommandText = commandText.ToString();
@@ -395,7 +396,7 @@ namespace DTService.Handlers
         }
 
         //因为CargoIncome需要根据文件名来读取录入的日期，所以单独使用一个方法
-        private void InsertIntoCargoIncome(SqlCommand cmd, string filePath)
+        private void InsertIntoCargoIncome(SqlCommand cmd, string filePath, string type)
         { 
             ArrayList dateAry = new ArrayList();
             StringBuilder commandText = new StringBuilder();
@@ -410,7 +411,7 @@ namespace DTService.Handlers
                 var count = 0;
 
                 //导入前需先删除同一天的数据
-                cmd.CommandText = "delete from cargoincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                cmd.CommandText = "delete from cargoincome where convert(varchar(12), fltdate, 112)='" + dateTime + "' and company='" + type + "'";
                 cmd.ExecuteNonQuery();
 
                 foreach (var row in rows)
@@ -419,7 +420,7 @@ namespace DTService.Handlers
                     if (count == 1 || count == rows.Count())//跳过第一行的日期以及最后一行的合计
                         continue;
 
-                    commandText.Append(InsertWithCargoIncome(TableName.cargoincome,GenerateValuesFromExcelRow(row), dateTime) + "\n");
+                    commandText.Append(InsertWithCargoIncome(TableName.cargoincome,GenerateValuesFromExcelRow(row), dateTime, type) + "\n");
 
                     if (count == 5000)
                     {
@@ -466,29 +467,29 @@ namespace DTService.Handlers
 
         //针对不同的数据表需要转换不同的数据格式以及更新不同的字段
         //生成每条插入数据的sql语句
-        private string GenerateInsertStr(TableName table, string[] values, string filePath = "")
+        private string GenerateInsertStr(TableName table, string[] values, string filePath = "", string type = "")
         {
             var commandText = "insert into " + Enum.GetName(typeof(TableName), table) + " (" + FilterEscape(ConfigurationManager.AppSettings[Enum.GetName(typeof(TableName), table)].ToString()) + ") ";
             var valueStr = " values(";
             switch (table)
             {
                 case TableName.pincome:
-                    valueStr = InsertWithPincome(values, valueStr);
+                    valueStr = InsertWithPincome(values, valueStr, type);
                     break;
                 case TableName.pincome_temp:
-                    valueStr = InsertWithPincome(values, valueStr);
+                    valueStr = InsertWithPincome(values, valueStr, type);
                     break;
                 case TableName.cincome:
-                    valueStr = InsertWithCIncome(values, valueStr);
+                    valueStr = InsertWithCIncome(values, valueStr, type);
                     break;
                 case TableName.et:
-                    valueStr = InsertWithCommon(values, valueStr, table);
+                    valueStr = InsertWithCommon(values, valueStr, table, type);
                     break;
                 case TableName.et_temp:
-                    valueStr = InsertWithCommon(values, valueStr, table);
+                    valueStr = InsertWithCommon(values, valueStr, table, type);
                     break;
                 case TableName.flightplan:
-                    valueStr = InsertWithFlightPlan(values, valueStr);
+                    valueStr = InsertWithFlightPlan(values, valueStr, type);
                     break;
                 case TableName.groupincome:
                     valueStr = InsertWithGroupIncome(values, valueStr);
@@ -500,7 +501,7 @@ namespace DTService.Handlers
                     valueStr = InsertWithHubIncome(values, valueStr);
                     break;
                 case TableName.lineincome:
-                    valueStr = InsertWithCommon(values, valueStr, table);
+                    valueStr = InsertWithCommon(values, valueStr, table, type);
                     break;
                 case TableName.fltincome:
                     valueStr = InsertWithFltIncome(values, valueStr, filePath);
@@ -517,7 +518,7 @@ namespace DTService.Handlers
 
         //下面是各个数据表的具体操作
         //pincome
-        private string InsertWithPincome(string[] values, string valueStr)
+        private string InsertWithPincome(string[] values, string valueStr, string type)
         {
             var count = 0;
             foreach (string value in values)
@@ -542,6 +543,7 @@ namespace DTService.Handlers
                 }
                 count++;
             }
+            valueStr += AddCompany(TableName.pincome, type) + ",";
             return valueStr;
         }
 
@@ -574,7 +576,7 @@ namespace DTService.Handlers
             return valueStr;
         }
 
-        private string InsertWithCIncome(string[] values, string valueStr)
+        private string InsertWithCIncome(string[] values, string valueStr, string type)
         {
             var count = 0;
             foreach (string value in values)
@@ -589,7 +591,7 @@ namespace DTService.Handlers
                 }
                 count++;
             }
-            valueStr += AddCompany(TableName.cincome) + ",";
+            valueStr += AddCompany(TableName.cincome, type) + ",";
             return valueStr;
         }
 
@@ -611,7 +613,7 @@ namespace DTService.Handlers
             return valueStr;
         }
         //flightplan
-        private string InsertWithFlightPlan(string[] values, string valueStr)
+        private string InsertWithFlightPlan(string[] values, string valueStr, string type)
         {
             var count = 0;
             foreach (string value in values)
@@ -632,7 +634,7 @@ namespace DTService.Handlers
                 }
                 count++;
             }
-            valueStr += AddCompany(TableName.flightplan) + ",";
+            valueStr += AddCompany(TableName.flightplan, type) + ",";
             return valueStr;
         }
 
@@ -818,7 +820,7 @@ namespace DTService.Handlers
 
 
         //cargoincome
-        private string InsertWithCargoIncome(TableName table, string[] values, string dateTime)
+        private string InsertWithCargoIncome(TableName table, string[] values, string dateTime, string type)
         {
             var commandText = "insert into " + Enum.GetName(typeof(TableName), table) + " (" + FilterEscape(ConfigurationManager.AppSettings[Enum.GetName(typeof(TableName), table)].ToString()) + ") ";
             var valueStr = " values(";
@@ -837,31 +839,31 @@ namespace DTService.Handlers
 
             valueStr += "'" + (Convert.ToDecimal(values[7]) + Convert.ToDecimal(values[8])) + "',";
             valueStr += "'" + dateTime + "',";//收入导出的时间
-            valueStr += AddCompany(table) + ");";
+            valueStr += AddCompany(table, type) + ");";
             commandText += valueStr;
             return commandText;
         }
 
         //通用的数据表转化，对于没有特殊字段的表可以调用该方法
-        private string InsertWithCommon(string[] values, string valueStr, TableName table)
+        private string InsertWithCommon(string[] values, string valueStr, TableName table, string type)
         {
             foreach (string value in values)
             {
                 valueStr += "'" + value.Replace(",", "").Replace("'", "''") + "',";
             }
 
-            if (AddCompany(table) != "")
+            if (AddCompany(table, type) != "")
             {
-                valueStr += AddCompany(table) + ",";
+                valueStr += AddCompany(table, type) + ",";
             }
             return valueStr;
         }
 
-        private string AddCompany(TableName table)
+        private string AddCompany(TableName table, string type)
         {
-            if (table == TableName.et || table == TableName.et_temp || table == TableName.cargoincome || table == TableName.flightplan || table == TableName.cincome)
+            if (table == TableName.et || table == TableName.et_temp || table == TableName.cargoincome || table == TableName.flightplan || table == TableName.cincome || table == TableName.pincome)
             {
-                return "'WUH'";
+                return "'" + type.ToUpper() + "'";
             }
             return "";
         }

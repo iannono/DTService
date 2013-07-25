@@ -99,7 +99,7 @@ namespace DTService.Handlers
         {
 
             string filePath = ConfigurationManager.AppSettings[type.ToUpper() + "FilePath"].ToString();
-            string ftpPath = ConfigurationManager.AppSettings[type.ToUpper() + "FtpPath"].ToString();
+            string ftpPath = ConfigurationManager.AppSettings["FtpPath"].ToString();
 
 
             switch (table)
