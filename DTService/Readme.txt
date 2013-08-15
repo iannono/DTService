@@ -32,6 +32,8 @@
 
 **webservice**
 
-*系统提供了基于HTTP的API，通过向http://localhost/api/dataservice/tablename形式的地址发起get请求，来执行对应的导入方法，返回执行结果
+*系统提供了基于HTTP的API，通过向http://localhost/api/dataservice/tablename?type=WUH形式的地址发起get请求，来执行对应的导入方法，返回执行结果
+*如果需要同时导入两个目录的文件，type请标记为"ALL"
+*导入fltincome时，type可以为任意形式
 
 

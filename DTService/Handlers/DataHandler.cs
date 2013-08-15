@@ -65,7 +65,7 @@ namespace DTService.Handlers
                         }
                         else if (table == TableName.hubincome)
                         {
-                            cmd.CommandText = "delete from hubincome where month='" + ImportMonth + "'";
+                            cmd.CommandText = "delete from hubincome where month='" + ImportMonth + "' and khcode='" + type + "'";
                             cmd.ExecuteNonQuery();
 
                             InsertIntoTable(table, cmd, filePath, type); 
@@ -220,7 +220,7 @@ namespace DTService.Handlers
 
                     }
                     commandText.Append(GenerateInsertStr(table, splits,"",type) + "\n");
-                    if (count == 5000)
+                    if (count == 100)
                     {
                         cmd.CommandText = commandText.ToString();
                         cmd.ExecuteNonQuery();
@@ -351,6 +351,13 @@ namespace DTService.Handlers
                 cmd.CommandText = "delete from fltincome where convert(varchar(12), fltdate, 112)='" + dateTime + "' and corporation = '" + corporation + "'";
                 cmd.ExecuteNonQuery();
 
+                //导入数据前，如果是WUH公司的数据，则需要删除对应日期下的sfincome表
+                if (corporation == "WUH")
+                {
+                    cmd.CommandText = "delete from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
+                    cmd.ExecuteNonQuery();
+                }
+
                 while (strTemp != null)
                 {
                     count++;
@@ -367,7 +374,7 @@ namespace DTService.Handlers
 
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
-                    //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）才需要录入到Sfincome;
+                    //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）,并且是WUH公司的才需要录入到Sfincome;
                     if (FilterLine(splits[8].ToString(), splits[16].ToString(), splits[36].ToString(), splits[39].ToString()) && corporation == "WUH")
                         commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, splits) + "\n");
 
@@ -379,11 +386,7 @@ namespace DTService.Handlers
                 cmd.ExecuteNonQuery();
 
                 if (commandTextWithSfincome.ToString() != "")
-                {
-                    //导入数据前，需要先删除该日期下的已有的数据
-                    cmd.CommandText = "delete from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
-                    cmd.ExecuteNonQuery();
-
+                { 
                     cmd.CommandText = commandTextWithSfincome.ToString();
                     cmd.ExecuteNonQuery();
                 }

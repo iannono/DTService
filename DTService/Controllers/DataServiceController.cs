@@ -25,7 +25,11 @@ namespace DTService.Controllers
             string results = "";
             try
             {
-                if(type.ToUpper() == "ALL")
+                if (table.ToLower() == "fltincome")
+                { 
+                    results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table), "WUH"); 
+                }
+                else if(type.ToUpper() == "ALL")
                 { 
                     results = fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table), "SHE");
                     results += fileHandler.ImportFile((TableName)fileHandler.GetTableTypeFromTableName(table), "WUH");

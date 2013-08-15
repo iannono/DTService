@@ -25,8 +25,9 @@ namespace DTService.Handlers
             var results = "";
             if (Directory.Exists(dir))
             {
-                var filePaths = Directory.GetFiles(dir);
-                results += GenerateResults(filePaths.Length);
+                List<string> filePaths = Directory.GetFiles(dir).ToList();
+                filePaths = FilterFile(filePaths);
+                results += GenerateResults(filePaths.Count, dir);
                 foreach (string filePath in filePaths)
                 {
                     if (table == TableName.fltincome && !IsFltIncomeFile(filePath))
@@ -68,6 +69,7 @@ namespace DTService.Handlers
             return results;
         }
 
+
         public bool IsFltIncomeFile(string filePath)
         {
             if (filePath.Contains("SEGMENT"))
@@ -94,7 +96,15 @@ namespace DTService.Handlers
             }
         }
 
-
+        //过滤到文件列表中除csv,txt,xls,xlsx外的文件
+        private List<string> FilterFile(List<string> filePaths)
+        {
+            List<string> filterPaths = filePaths.Where(filePath => filePath.Substring(filePath.LastIndexOf('.'), filePath.Length - filePath.LastIndexOf('.')) == ".csv" ||
+                                                                   filePath.Substring(filePath.LastIndexOf('.'), filePath.Length - filePath.LastIndexOf('.')) == ".txt" ||
+                                                                   filePath.Substring(filePath.LastIndexOf('.'), filePath.Length - filePath.LastIndexOf('.')) == ".xls" ||
+                                                                   filePath.Substring(filePath.LastIndexOf('.'), filePath.Length - filePath.LastIndexOf('.')) == ".xlsx").ToList();
+            return filterPaths;
+        }
         private string GetDirPath(TableName table, string type)
         {
 
@@ -135,17 +145,17 @@ namespace DTService.Handlers
             return dirPath;
         }
 
-        private string GenerateResults(int fileLength)
+        private string GenerateResults(int fileLength, string filePath)
         {
             var results = "";
-            results += "<h4>导入结果</h4>";
+            results += "<h4>导入目录：“" + filePath + "”</h4>";
             if (fileLength == 0)
             {
-                results += "<p>目录下无导入文件，请检查文件目录!</p>";
+                results += "<p>该目录下暂无导入文件!</p>";
             }
             else
             {
-                results += "<p>本次导入共需导入：" + fileLength + "个文件，结果如下:</p>";
+                results += "<p>本次导入的结果如下:</p>";
             }
             return results;
         }
