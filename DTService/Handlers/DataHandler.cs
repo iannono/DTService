@@ -93,11 +93,20 @@ namespace DTService.Handlers
                             cmd.CommandText = "delete from et_temp";
                             cmd.ExecuteNonQuery();
                         }
+                        else if (table == TableName.groupincome)
+                        { 
+                            //groupincome的文件中也出现了重复的数据，所以导入的时候，需要根据月份删除同月的数据
+                            cmd.CommandText = "delete from groupincome where month='" + ImportMonth + "' and company='" + type + "'";
+                            cmd.ExecuteNonQuery();
+
+                            InsertIntoTable(table, cmd, filePath, type);
+
+                        }
                         else if (table == TableName.fltincome)
                         {
                             //对于fltincome表，插入数据后
                             //还需要从表中选择部分数据，插入其他的表中
-                            InsertIntoFltIncome(cmd, filePath); 
+                            InsertIntoFltIncome(cmd, filePath);
                         }
                         else if (table == TableName.cargoincome)
                         {
@@ -108,7 +117,7 @@ namespace DTService.Handlers
                             cmd.CommandText = "delete from cincome where month='" + ImportMonth + "' and corporation='" + type + "'";
                             cmd.ExecuteNonQuery();
 
-                            InsertIntoTable(table, cmd, filePath, type); 
+                            InsertIntoTable(table, cmd, filePath, type);
                         }
                         else
                         {
