@@ -361,7 +361,22 @@ namespace DTService.Handlers
                 cmd.ExecuteNonQuery();
 
                 //导入数据前，如果是WUH公司的数据，则需要删除对应日期下的sfincome表
-                if (corporation == "WUH")
+                //20131118 Start
+                //增加新的逻辑
+                //删除之前先判断当天的数据中是否存在数据的flag非0
+                //如果有任意一条flag非0，则取消导入
+                //20131118 End
+                cmd.CommandText = "select  * from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "' and flag <> 0";
+                var sf_flag = false;
+                if (cmd.ExecuteScalar() == null || Int32.Parse(cmd.ExecuteScalar().ToString()) == 0)
+                {
+                    sf_flag = true;
+                }
+                else
+                {
+                    sf_flag = false;
+                }
+                if (corporation == "WUH" && sf_flag == true)
                 {
                     cmd.CommandText = "delete from sfincome where convert(varchar(12), fltdate, 112)='" + dateTime + "'";
                     cmd.ExecuteNonQuery();
@@ -384,7 +399,7 @@ namespace DTService.Handlers
 
                     //-------以下是生成从fltincome中抽取数据，插入到sfincome表中的语句-------------//
                     //如果承运人是CZ，并且航线中含有（WUH、YIH、ENH、XFN）等，并且（除共享标志为1且执行单位为空的）,并且是WUH公司的才需要录入到Sfincome;
-                    if (FilterLine(splits[8].ToString(), splits[16].ToString(), splits[36].ToString(), splits[39].ToString()) && corporation == "WUH")
+                    if (FilterLine(splits[8].ToString(), splits[16].ToString(), splits[36].ToString(), splits[39].ToString()) && corporation == "WUH" && sf_flag == true)
                         commandTextWithSfincome.Append(GenerateInsertStr(TableName.sfincome, splits) + "\n");
 
                     strTemp = sr.ReadLine();
@@ -794,7 +809,8 @@ namespace DTService.Handlers
                         "'" + values[91] + "'," + //燃油附加费收入oil：对应燃油附加费oil 联程各航段求和
                         "'" + (Convert.ToDecimal(values[62]) + Convert.ToDecimal(values[91])) + "'," + //客行收入合计（含燃油）pincomeoil：对应客行收入（sfincome） + 燃油附加费收入（sfincome）入
                         "'" + values[61] + "'," +   //全票收入ticketincome：对应全票价收入Y舱全票价fullpricey 联程各航段求和
-                        "'" + values[90] + "',"; //航空保险费insurance :对应航空保险费 insurance
+                        "'" + values[90] + "'," +  //航空保险费insurance :对应航空保险费 insurance 
+                        "0,"; //flag 用于标识是否删除当天的sfincome数据，默认值为0
 
             return valueStr;
         }
